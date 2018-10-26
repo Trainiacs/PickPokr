@@ -60,6 +60,7 @@ $theme-max-read-width: 600px;
 			bottom: 0;
 			background: $theme-block-background;
 			z-index: 0;
+			box-shadow: 0 0 $theme-soft-size $theme-block-color;
 		}
 
 		.word-list {
