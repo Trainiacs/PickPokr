@@ -43,6 +43,18 @@ body {
 	}
 }
 
+@keyframes anim-sway {
+	0% {
+		transform: rotate(10deg);
+	}
+	50% {
+		transform: rotate(-10deg);
+	}
+	100% {
+		transform: rotate(10deg);
+	}
+}
+
 .game-panel {
 	background: url("img/bg0.jpg");
 	background-size: 100% auto;
@@ -83,7 +95,7 @@ body {
 				vertical-align: text-top;
 
 				.question {
-					animation: anim-scale-in 0.2s ease-in-out ;
+					animation: anim-scale-in 0.2s ease-in-out;
 					border-radius: 50%;
 					width: $theme-click-size;
 					height: $theme-click-size;
@@ -120,6 +132,17 @@ body {
 					&.primary {
 						background: $theme-primary-background;
 						color: $theme-primary-color;
+
+						&.complete {
+							animation: anim-sway 2s infinite;
+						}
+					}
+				}
+
+				&.correct {
+					.char:not(.primary) {
+						border: solid 2px $theme-primary-background;
+						color: $theme-primary-background;
 					}
 				}
 			}

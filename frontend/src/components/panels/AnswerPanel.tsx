@@ -23,7 +23,7 @@ export class AnswerPanel extends React.Component<Props, State> {
 			<div className="answer-panel panel">
 				<div className="question">
 					<div className="content">
-						{word.question === undefined ? "-" : word.question}
+						{word.question === undefined ? "???" : word.question}
 					</div>
 				</div>
 				<div className="answer">

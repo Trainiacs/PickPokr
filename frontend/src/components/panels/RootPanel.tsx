@@ -42,7 +42,7 @@ export class RootPanel extends React.Component<Props, State> {
 						case "game": return (
 							<GamePanel 
 								wordList={wordList}
-								answerList={answerList}
+								answerList={wordList.map((w: GameWord, i: number) => answerList[i] || "")}
 								onWordSelected={this._onWordSelected.bind(this)}
 							/>
 						);
