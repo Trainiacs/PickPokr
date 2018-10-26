@@ -1,4 +1,5 @@
 import * as React from "react";
+import Button from "@material-ui/core/Button";
 
 interface Props {
 
@@ -25,7 +26,9 @@ export class RootPanel extends React.Component<Props, State> {
 
 		return (
 			<div className="panel root-panel">
-
+				<Button variant="contained" color="primary">
+					Hello World!
+				</Button>
 			</div>
 		);
 	}
