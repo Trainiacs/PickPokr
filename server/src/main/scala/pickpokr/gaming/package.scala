@@ -2,7 +2,7 @@ package pickpokr
 
 import akka.actor.typed.ActorRef
 
-package object game {
+package object gaming {
   type Client = ActorRef[Client.Message]
   type Player = ActorRef[Player.Command]
   type Game = ActorRef[Game.Command]

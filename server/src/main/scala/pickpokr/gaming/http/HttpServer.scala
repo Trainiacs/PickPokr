@@ -1,4 +1,4 @@
-package pickpokr.game.http
+package pickpokr.gaming.http
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
@@ -11,8 +11,8 @@ import akka.stream.scaladsl.{Flow, Sink}
 import akka.stream.typed.scaladsl.{ActorMaterializer, ActorSink, ActorSource}
 import akka.stream.OverflowStrategy
 import akka.NotUsed
-import pickpokr.game.{Client, Lobby, Nick}
-import pickpokr.game.Client.{Completed, Failed}
+import pickpokr.gaming.{Client, Lobby, Nick}
+import pickpokr.gaming.Client.{Completed, Failed}
 import ujson.Js
 
 object HttpServer extends App with JsonSupport with Directives {
@@ -28,10 +28,10 @@ object HttpServer extends App with JsonSupport with Directives {
     }
   }
 
-  def clientSink(trainId: Int, nick: Nick) =
+  def lobbySink(trainId: Int, nick: Nick) =
     ActorSink.actorRef[Lobby.Command](lobby, Lobby.Cancel(trainId, nick), _ => Lobby.Cancel(trainId, nick))
 
-  def webSocketFlow(trainId: Int, nick: Nick, system: ActorSystem[Lobby.Command]) = {
+  def webSocketFlow(trainId: Int, nick: Nick, system: ActorSystem[Lobby.Command]): Flow[Message, Message, NotUsed] = {
     Flow[Message].
       collect {
         case TextMessage.Strict(msg) => msg
@@ -44,14 +44,16 @@ object HttpServer extends App with JsonSupport with Directives {
             (kind, js)
           }.
           collect {
-            case ("answer", js) =>
-              Lobby.Ans(trainId, nick)
+            case ("guess", js) =>
+              Lobby.Guess(trainId, nick, js.str)
+            case ("requestExchange", js) ⇒
+              Lobby.RequestExchange(trainId, nick)
           }.
-          to(clientSink(trainId, nick))
+          to(lobbySink(trainId, nick))
 
-        val out = ActorSource.actorRef[Client.Message](
-          { case Completed => _ },
-          { case Failed => new RuntimeException("bad") },
+        val out = ActorSource.actorRef[Message](
+          { case msg => println(msg.toString) }, // Todo complete
+          { case msg => new RuntimeException(s"bad:$msg") },
           1,
           OverflowStrategy.backpressure).
           mapMaterializedValue { clientRef =>

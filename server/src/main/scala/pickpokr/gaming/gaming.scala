@@ -1,29 +1,46 @@
 package pickpokr
-package game
+package gaming
 
-import akka.actor.typed.{ActorRef, Behavior}
+import java.security.SecureRandom
+
+import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors._
 
-case class Nick(literal: String) extends AnyVal
+import scala.annotation.tailrec
+
+case class Nick(literal: String) extends AnyVal with Ordered[Nick] {
+  override def compare(that: Nick): Int = literal.compare(that.literal)
+}
 
 object Player {
   sealed trait Event
   case class RoasterUpdated(roaster: Train.Roaster) extends Event
   sealed trait Command
   case class UpdateRoaster(roaster: Train.Roaster) extends Command
-  case class Challenge(index: Int, question: String, answerLength: Int) extends Command
-  case class Answer(answer: String) extends Command
+  case class JoinGame(index: Int, question: String, answer: String, game: Game) extends Command
+  case class Guess(literal: String) extends Command
+  case class Winner(nick: Nick) extends Command
+  case class Pin(value:Int) extends Command
 
-  def behavior(client: Client): Behavior[Command] = {
+  def waiting(client: Client, nick: Nick): Behavior[Command] = {
+    receiveMessage {
+      case JoinGame(index, question, answer, game) =>
+        client ! Client.Challenge(index, question, answer.length)
+        playing(client, nick, game, answer)
+    }
+  }
+  def playing(client: Client, nick: Nick, game: Game, answer: String): Behavior[Command] = {
     receiveMessage {
       case UpdateRoaster(roaster) =>
-        client ! Client.UpdateRoaster(roaster.nicks)
+        client ! Client.UpdateRoaster(roaster.nicks.toList)
         same
-      case Challenge(index, question, answerLength) =>
-        client ! Client.Challenge(index, question, answerLength)
+      case guess: Guess if guess.literal == answer =>
+        game ! Game.Winner(nick)
         same
-      case Answer(answer) =>
-        client ! Client.A
+      case Winner(winner) ⇒ client ! Client.Outcome(winner, answer)
+        same // Todo end game
+      case Pin(pin) ⇒
+        client ! Client.Pin(pin)
         same
     }
   }
@@ -37,15 +54,18 @@ object Game {
 
   sealed trait Event
   sealed trait Command
+  case class Winner(nick: Nick) extends Command
 
   def behavior(players: List[Player]): Behavior[Command] = {
     setup { ctx =>
       players.zip(questions).zipWithIndex.foreach {
         case ((player, (question, answer)), i) =>
-          player ! Player.Challenge(i, question, answer.length)
+          player ! Player.JoinGame(i, question, answer, ctx.self)
       }
       receiveMessage {
-        case Answer => println(x)
+        case Winner(winner) =>
+          players foreach (_ ! Player.Winner(winner))
+          same
       }
     }
   }
@@ -58,14 +78,12 @@ object Client {
   case class UpdateRoaster(nicks: List[Nick]) extends Message
   case class Pin(value: Int) extends Message
   case class Challenge(index: Int, question: String, answerLength: Int) extends Message
-  case class Winner(nick: Nick) extends Message
-  case object Completed extends Message
-  case object Failed extends Message
+  case class Outcome(nick: Nick, answer: String) extends Message
 }
 
 object Train {
   type Id = Long
-
+  case class Pin(value: Int) extends AnyVal
   case class Roaster(nicks: List[Nick] = Nil)
 
   sealed trait Event
@@ -75,8 +93,12 @@ object Train {
   sealed trait Command
   case class ClientConnected(nick: Nick, client: Client) extends Command
   private case object CheckRoaster extends Command
+  case class Guess(nick: Nick, value: String) extends Command
+  case class RequestExchange(nick: Nick) extends Command
 
-  def behavior(players: Map[Nick, Player] = Map.empty, roaster: Roaster = Roaster(), games: List[Game] = Nil): Behavior[Command] = {
+  private val random = new SecureRandom()
+
+  def behavior(players: Map[Nick, Player] = Map.empty, roaster: Roaster = Roaster(), games: List[Game] = Nil, exchanges: Map[Int, Nick] = Map.empty): Behavior[Command] = {
     setup { ctx ⇒
       receiveMessagePartial {
         case ClientConnected(nick, client) =>
@@ -84,20 +106,31 @@ object Train {
             client ! Client.Denied("Nick already taken")
             same
           } else {
-            val player = ctx.spawn(Player.behavior(client), s"player-${nick.literal}")
+            val player = ctx.spawn(Player.waiting(client, nick), s"player-${nick.literal}")
             client ! Client.Enrolled
             val up = players.updated(nick, player)
-            up.values.foreach( _ ! Player.UpdateRoaster(Roaster(up.keySet)) )
+            val updatedRoaster = roaster.copy(nicks = nick :: roaster.nicks)
+            up.values.foreach(_ ! Player.UpdateRoaster(updatedRoaster))
             ctx.self ! CheckRoaster
-            // send out roaster
-            behavior(up, roaster, games)
+            behavior(up, updatedRoaster, games)
           }
         case CheckRoaster if roaster.nicks.size > 2 =>
-          val gamePlayers = players.collect {
-            case (nick, player) if roaster.nicks(nick) => player
-          }.toList
+          val gamePlayers = roaster.nicks.flatMap(players.get)
           val game = ctx.spawn(Game.behavior(gamePlayers), s"game-${games.size + 1}")
           behavior(players, Roaster(), game :: games)
+        case Guess(nick, guess) ⇒
+          players(nick) ! Player.Guess(guess)
+          same
+        case RequestExchange(nick) ⇒
+          @tailrec
+          def generatePin(): Int = {
+            val pin = random.nextInt(10000)
+            if (!exchanges.keySet(pin)) pin
+            else generatePin()
+          }
+          val pin = generatePin()
+          players(nick) ! Player.Pin(pin)
+          behavior(players, roaster, games, exchanges + (pin → nick))
       }
     }
   }
@@ -107,26 +140,28 @@ object Lobby {
   type Roster = List[String]
 
   sealed trait Command
-  case class Enroll(train: Train.Id, nick: Nick) extends Command
   case class Cancel(train: Train.Id, nick: Nick) extends Command
   case class ClientConnected(train: Train.Id, nick: Nick, client: Client) extends Command
+  case class Guess(train: Train.Id, nick: Nick, guess: String) extends Command
+  case class RequestExchange(trainId: Int, nick: Nick) extends Command
 
   def behavior(trains: Map[Train.Id, Train] = Map.empty, clients: List[Client] = Nil): Behavior[Command] = {
     setup { ctx ⇒
       receiveMessagePartial {
-        case Enroll(trainId, nick) =>
-          val train = trains.getOrElse(trainId, ctx.spawn(Train.behavior(), s"train-$trainId"))
-          train ! Train.Enroll(nick)
-          behavior(trains.updated(trainId, train))
         case ClientConnected(trainId, nick, client) =>
           val train = trains.getOrElse(trainId, ctx.spawn(Train.behavior(), s"train-$trainId"))
           train ! Train.ClientConnected(nick, client)
           behavior(trains.updated(trainId, train), client :: clients)
+        case Guess(trainId: Train.Id, nick: Nick, guess: String) ⇒
+          trains(trainId) ! Train.Guess(nick, guess)
+          same
+        case RequestExchange(trainId, nick) ⇒
+          trains(trainId) ! Train.RequestExchange(nick)
+          same
       }
     }
   }
 }
-
 
 object Words {
   val all =
