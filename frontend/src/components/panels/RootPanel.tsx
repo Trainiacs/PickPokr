@@ -1,8 +1,12 @@
 import * as React from "react";
 import {GamePanel} from "./GamePanel";
 import {AnswerPanel} from "./AnswerPanel";
+import {LobbyPanel} from "./LobbyPanel";
 
-import {GameWord} from "../../modules";
+import {
+	GameWord,
+	GamePlayer,
+} from "../../modules";
 
 interface Props {
 
@@ -11,6 +15,7 @@ interface Props {
 interface State {
 	currentWordIndex?: number;
 	answerList: string[];
+	playerSelf: GamePlayer;
 }
 
 export class RootPanel extends React.Component<Props, State> {
@@ -19,6 +24,10 @@ export class RootPanel extends React.Component<Props, State> {
 		this.state = {
 			currentWordIndex: 0,
 			answerList: [],
+			playerSelf: {
+				name: "Mattias",
+				ready: false,
+			}
 		};
 	}
 
@@ -32,8 +41,16 @@ export class RootPanel extends React.Component<Props, State> {
 			{value: "grav"},
 			{value: "agitatör"}
 		];
+		let playerList: GamePlayer[] = [
+			{name: "Dirk", ready: true},
+			{name: "McNeil", ready: true},
+			{name: "Stuge", ready: true},
+			{name: "Elminster", ready: true},
+			{name: "Woody", ready: false},
+		];
+		let playerSelf = this.state.playerSelf;
 		let answerList: string[] = this.state.answerList;
-		let currentPanel = currentWordIndex === undefined ? "game" : "answer";
+		let currentPanel = "lobby";//currentWordIndex === undefined ? "game" : "answer";
 
 		return (
 			<div className="panel root-panel">
@@ -54,6 +71,13 @@ export class RootPanel extends React.Component<Props, State> {
 								onAnswerSubmit={(value: string) => this._onAnswerSubmit(currentWordIndex, value)}
 							/>
 						);
+						case "lobby": return (
+							<LobbyPanel
+								playerList={playerList}
+								playerSelf={playerSelf}
+								onReadyStateChanged={this._onPlayerReadyStateChanged.bind(this)}
+							/>
+						);
 						default: return (
 							<div />
 						);
@@ -62,6 +86,12 @@ export class RootPanel extends React.Component<Props, State> {
 				
 			</div>
 		);
+	}
+
+	private _onPlayerReadyStateChanged(ready: boolean) {
+		let playerSelf: GamePlayer = Object.assign({}, this.state.playerSelf);
+		playerSelf.ready = ready;
+		this.setState({playerSelf: playerSelf});
 	}
 
 	private _onWordSelected(word: GameWord, wordIndex: number) {

@@ -244,3 +244,149 @@ body {
 		}
 	}
 }
+
+.lobby-panel {
+	
+	background: url("img/bg0.jpg");
+	background-size: 100% auto;
+
+	.player-self {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		height: $theme-picture-size;
+		font-size: 40px;
+		color: white;
+		text-shadow: 0 $theme-soft-size*0.5 $theme-soft-size*0.5 rgba(0, 0, 0, 0.6);
+
+		& > .status {
+			position: relative;
+			margin-left: $theme-margin * 3;
+			width: $theme-click-size * 3;
+			height: $theme-click-size * 3;
+			text-align: center;
+			text-shadow: none;
+			border-radius: 50%;
+			overflow: hidden;
+
+			&:before {
+				border-radius: 50%;
+				content: "\f058";
+				font-size: $theme-click-size * 3;
+				font-family: 'Font Awesome 5 Free';
+				line-height: $theme-click-size * 3;
+			}
+
+			&.ready:before {
+				content: "\f058";
+				background: $theme-primary-background;
+				color: $theme-primary-color;
+			}
+
+			&.ready:after {
+				position: absolute;
+				top: -50%;
+				content: "";
+				display: block;
+				height: 200%;
+				width: 20%;
+				background: white;
+				transform: rotate(30deg);
+				animation: anim-shine 1s infinite ease-in;
+			}
+
+			&.waiting:before {
+				content: "\f057";
+				background: $theme-block-color;
+				color: $theme-block-background;
+			}
+
+			&.waiting {
+				animation: anim-scale-in 0.2s ease-in-out, anim-sway 1s infinite ease-in-out, anim-sway-start 1s ease-in-out;
+				animation-delay: 0s, 0.2s, 0.2s;
+			}
+
+			&.ready {
+				animation: anim-scale-in 0.2s ease-in-out;
+				animation-delay: 0s, 0.2s;
+			}
+		}
+	}
+
+	.player-list {
+		padding: $theme-margin;
+		background: $theme-block-background;
+		color: $theme-block-color;
+		min-height: calc(100vh - #{$theme-picture-size});
+
+		.player {
+			max-width: $theme-max-read-width;
+			margin: auto;
+			position: relative;
+			border: solid 1px $theme-block-color;
+			border-radius: $theme-soft-size;
+			margin-bottom: $theme-margin;
+			height: $theme-click-size;
+
+			& > .name {
+				padding: 0 $theme-margin;
+				line-height: $theme-click-size;
+
+				&:before {
+					font-family: 'Font Awesome 5 Free';
+					content: "\f007";
+					margin-right: $theme-margin;	
+				}
+			}
+
+			& > .status {
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: $theme-click-size;
+				bottom: 0;
+				overflow: hidden;
+
+				&:before {
+					content: "\f058";
+					border-radius: $theme-soft-size;
+					font-size: 25px;
+					font-family: 'Font Awesome 5 Free';
+					position: absolute;
+					top: $theme-margin * 0.3;
+					bottom: $theme-margin * 0.3;
+					left: $theme-margin * 0.3;
+					right: $theme-margin * 0.3;
+					text-align: center;
+					line-height: $theme-click-size - $theme-margin * 0.6;
+					overflow: hidden;
+				}
+
+				&.ready:after {
+					position: absolute;
+					top: -50%;
+					content: "";
+					display: block;
+					height: 200%;
+					width: 20%;
+					background: white;
+					transform: rotate(30deg);
+					animation: anim-shine 1s infinite ease-in;
+				}
+
+				&.ready:before {
+					content: "\f058";
+					color: $theme-primary-color;
+					background: $theme-primary-background;
+				}
+
+				&.waiting:before {
+					content: "\f017";
+					color: $theme-block-background;
+					background: $theme-block-color;
+				}
+			}
+		}
+	}
+}

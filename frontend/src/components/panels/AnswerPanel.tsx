@@ -36,6 +36,8 @@ export class AnswerPanel extends React.Component<Props, State> {
 
 	private _onAnswerChange(event: any) {
 		let onValueChange = this.props.onValueChange;
-		onValueChange(event.target.value.toUpperCase());
+		let word = this.props.word;
+		let value = event.target.value.toUpperCase().substring(0, word.value.length);
+		onValueChange(value);
 	}
 }
