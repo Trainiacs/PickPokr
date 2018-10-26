@@ -45,6 +45,7 @@ module.exports = {
 				new CopyWebpackPlugin([
 					{ from: './node_modules/react/umd/react.' + reactMode + '.js', to: distPath + '/vendor/react.js' },
 					{ from: './node_modules/react-dom/umd/react-dom.' + reactMode + '.js', to: distPath + '/vendor/react-dom.js' },
+					{ from: './img', to: distPath + '/img' },
 					{ from: './index.html', to: distPath },
 				])
 			],

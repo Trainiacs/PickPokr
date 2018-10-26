@@ -1,55 +1,94 @@
-* {
-	box-sizing: border-box;
-}
-
 body {
 	background: #eee;
 	padding: 0;
 	margin: 0;
-	font-family: verdana, arial;
-	font-size: 16px;
-}
-
-h1, h2, h3 {
-	margin: 0;
-	padding: 0;
-	margin-bottom: 10px;
-}
-
-h1 {
-	font-size: 18px;
-
-	&.title {
-		background: #900;
-		color: #990;
-		padding: 20px;
-		text-align: center;
-	}
-}
-
-h2 {
-	font-size: 15px;
-}
-
-h3 {
-	font-size: 12px;
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .panel {
-	display: block;
-	width: 100%;
-	max-width: 500px;
-	margin: auto;
-	background: #fff;
-	padding: 20px;
-	padding-bottom: 40px;
+	width: 100vw;
 }
 
-.signin-panel {
+$theme-margin: 10px;
+$theme-click-size: 50px;
+$theme-soft-size: 5px;
+$theme-picture-size: 200px;
 
+$theme-primary-background: #990;
+$theme-secondary-background: #fff;
+
+$theme-primary-color: #fff;
+$theme-secondary-color: #000;
+
+.game-panel {
+	background: url("img/bg0.jpg");
+	background-size: 100% auto;
+	padding-top: $theme-picture-size;
+
+	.game-container {
+		position: relative;
+		min-height: calc(100vh - #{$theme-picture-size});
+		text-align: center;
+
+		&::after {
+			position: absolute;
+			content: "";
+			display: block;
+			top: $theme-click-size * 1.5 + $theme-margin;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: #333;
+			z-index: 0;
+		}
+
+		.word-list {
+			position: relative;
+			display: inline-block;
+			white-space: nowrap;
+			overflow: auto;
+			padding: 0 $theme-margin;
+			z-index: 1;
+
+			.word {
+				display: inline-block;
+
+				margin-left: $theme-margin;
+				margin-right: $theme-margin;
+				vertical-align: text-top;
+
+				.question {
+					border-radius: 50%;
+					width: $theme-click-size;
+					height: $theme-click-size;
+					text-align: center;
+					line-height: $theme-click-size;
+					background: $theme-secondary-background;
+					color: $theme-secondary-color;
+
+					box-shadow: 0px $theme-soft-size $theme-soft-size rgba(0, 0, 0, 0.5);
+					margin-bottom: $theme-margin;
+					font-weight: bold;
+				}
+
+				.char {
+					background: $theme-secondary-background;
+					color: $theme-secondary-color;
+					border-radius: $theme-soft-size;
+					width: $theme-click-size;
+					height: $theme-click-size;
+					text-align: center;
+					line-height: $theme-click-size;
+
+					margin-bottom: $theme-margin * 0.5;
+					box-shadow: 0px $theme-soft-size $theme-soft-size rgba(0, 0, 0, 0.5); 
+
+					&.primary {
+						background: $theme-primary-background;
+						color: $theme-primary-color;
+					}
+				}
+			}
+		}
+	}
 }
-
-@import "widgets/button";
-@import "widgets/input";
-@import "widgets/column-grid";
-@import "widgets/song-view";

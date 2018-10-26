@@ -1,5 +1,7 @@
 import * as React from "react";
-import Button from "@material-ui/core/Button";
+import {GamePanel} from "./GamePanel";
+
+import {GameWord} from "../../modules";
 
 interface Props {
 
@@ -23,12 +25,17 @@ export class RootPanel extends React.Component<Props, State> {
 
 	render() {
 		let viewMode = this.state.viewMode;
+		let wordList: GameWord[] = [
+			{question: "Kamp", value: "strid"},
+			{value: "trav"},
+			{value: "uggla"},
+			{value: "grav"},
+			{value: "agitatör"}
+		];
 
 		return (
 			<div className="panel root-panel">
-				<Button variant="contained" color="primary">
-					Hello World!
-				</Button>
+				<GamePanel wordList={wordList}/>
 			</div>
 		);
 	}
