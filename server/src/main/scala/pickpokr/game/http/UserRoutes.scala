@@ -18,7 +18,6 @@ import pickpokr.game.http.UserRegistryActor._
 import akka.pattern.ask
 import akka.util.Timeout
 
-//#user-routes-class
 trait UserRoutes extends JsonSupport {
   //#user-routes-class
 
