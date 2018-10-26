@@ -27,15 +27,12 @@ type OutputEvents = {
 	exchangePin: {
 		pin: string;
 	};
-	roaster: {
-		players: string[];
-	}
+	roaster: string[];
 	challange: {
-		words: {
-			length: number;
-			question?: string;
-		}[]
-	};
+		index?: number;
+		answerLength: number;
+		question?: string;
+	}[];
 	winner: {
 		nick: string;
 	};
@@ -46,13 +43,13 @@ export type EventBackend = Backend<InputEvents, OutputEvents>;
 export class MockBackend implements EventBackend {
 	private _players: string[];
 	private _words: {
-		length: number;
+		answerLength: number;
 		question?: string;
 	}[];
 
 	private _messageListeners: {[x: string]: (ev: {type: keyof OutputEvents, payload: OutputEvents[keyof OutputEvents]}) => void};
 
-	constructor() {
+	constructor(data: string) {
 		this._players = [
 			{name: "Dirk", ready: true},
 			{name: "McNeil", ready: true},
@@ -61,11 +58,11 @@ export class MockBackend implements EventBackend {
 			{name: "Woody", ready: false},
 		].map(w => w.name);
 		this._words = [
-			{question: "Kampen om en sak som gjorde något och det var roligt när det blev knasigt för det var inte som det brukar eller hur?", length: 5},
-			{length: 7},
-			{length: 4},
-			{length: 5},
-			{length: 9}
+			{question: "Kampen om en sak som gjorde något och det var roligt när det blev knasigt för det var inte som det brukar eller hur?", answerLength: 5},
+			{answerLength: 7},
+			{answerLength: 4},
+			{answerLength: 5},
+			{answerLength: 9}
 		];
 		this._messageListeners = {};
 	}
@@ -73,10 +70,10 @@ export class MockBackend implements EventBackend {
 	public connect(nick: string) {
 		if (this._players.indexOf(nick) === -1) this._players.push(nick);
 		setTimeout(() => {
-			this._triggerMessage({type: "roaster", payload: {players: this._players}});
+			this._triggerMessage({type: "roaster", payload: this._players});
 		}, 500);
 		setTimeout(() => {
-			this._triggerMessage({type: "challange", payload: {words: this._words}});
+			this._triggerMessage({type: "challange", payload: this._words});
 		}, 2000)
 	}
 
@@ -112,7 +109,7 @@ export class WebSocketBackend implements EventBackend {
 	}
 
 	public connect(nick: string) {
-		this._createSocket(this._host);
+		this._createSocket(this._host + "/" + nick);
 	}
 
 	public send<T extends keyof InputEvents>(message: {type: T, payload: InputEvents[T]}) {
@@ -127,7 +124,6 @@ export class WebSocketBackend implements EventBackend {
 		try {
 			if (this._socket !== undefined) this._socket.close();
 			this._socket = new WebSocket(host);
-			this._messageListeners = {};
 			this._socket.addEventListener("message", this._onMessage.bind(this));
 			this._socket.addEventListener("error", this._onError.bind(this));
 		} catch (e) {
@@ -159,19 +155,23 @@ export class WebSocketBackend implements EventBackend {
 		try {
 			data = JSON.parse(ev.data);
 		} catch (e) {
+			console.log(ev.data);
 			data = {
 				type: "error", 
 				payload: {
-					message: "Unable to parse json"
+					message: "Unable to parse json",
 				}
 			};
 		}
+		console.log(ev);
 		this._triggerMessage(data);
 	}
 
 	private _triggerMessage(ev: {type: keyof OutputEvents, payload: OutputEvents[keyof OutputEvents]}) {
 		if (this._messageListeners[ev.type as string] !== undefined) {
 			this._messageListeners[ev.type as string](ev);
+		} else {
+			console.log(ev);
 		}
 	}
 }

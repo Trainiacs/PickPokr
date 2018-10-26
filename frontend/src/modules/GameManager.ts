@@ -30,9 +30,9 @@ export class GameManager {
 		this._answers = this._words.map(() =>  "");
 	}
 
-	public static importWords(words: {length: number, question?: string}[]): GameWord[] {
+	public static importWords(words: {answerLength: number, question?: string}[]): GameWord[] {
 		return words.map(w => ({
-			value: "*".repeat(w.length),
+			value: "*".repeat(w.answerLength),
 			question: w.question,
 		}));
 	}

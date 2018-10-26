@@ -32,7 +32,7 @@ export class Application {
 
 	async init() {
 		this._state = "start";
-		this._connect("test_user");
+		this._connect("test_user3");
 	}
 
 	private _connect(nick: string) {
@@ -44,16 +44,17 @@ export class Application {
 		this._backend.connect(nick);
 	}
 
-	private _onRosterEvent(ev: {type: "roaster", payload: {players: string[]}}) {
-		this._lobbyManager.setPlayers(LobbyManager.importPlayers(ev.payload.players));
+	private _onRosterEvent(ev: {type: "roaster", payload: string[]}) {
+		this._lobbyManager.setPlayers(LobbyManager.importPlayers(ev.payload));
 		if (this._state === "waiting") {
 			this._state = "lobby";
 		}
+		console.log(this._state, ev);
 		this._render();
 	}
 
-	private _onChallangeEvent(ev: {type: "challange", payload: {words: {length: number, question?: string}[]}}) {
-		let words = GameManager.importWords(ev.payload.words);
+	private _onChallangeEvent(ev: {type: "challange", payload: {answerLength: number, question?: string}[]}) {
+		let words = GameManager.importWords(ev.payload);
 		this._gameManager.setWords(words);
 		if (this._state === "lobby") {
 			this._state = "game";
