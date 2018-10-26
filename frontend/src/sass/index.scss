@@ -1,3 +1,5 @@
+@import "./fonts";
+
 $theme-margin: 10px;
 $theme-click-size: 50px;
 $theme-soft-size: 5px;
@@ -43,6 +45,18 @@ body {
 	}
 }
 
+@keyframes anim-sway-start {
+	0% {
+		transform: rotate(0deg);
+	}
+	50% {
+		transform: rotate(-10deg);
+	}
+	100% {
+		transform: rotate(10deg);
+	}
+}
+
 @keyframes anim-sway {
 	0% {
 		transform: rotate(10deg);
@@ -52,6 +66,18 @@ body {
 	}
 	100% {
 		transform: rotate(10deg);
+	}
+}
+
+@keyframes anim-shine {
+	0% {
+		left: -50%;
+	}
+	50% {
+		left: -50%;
+	}
+	100% {
+		left: 200%;
 	}
 }
 
@@ -125,6 +151,7 @@ body {
 					height: $theme-click-size;
 					text-align: center;
 					line-height: $theme-click-size;
+					overflow: hidden;
 
 					margin-bottom: $theme-margin * 0.5;
 					box-shadow: 0px $theme-soft-size $theme-soft-size rgba(0, 0, 0, 0.5); 
@@ -134,7 +161,19 @@ body {
 						color: $theme-primary-color;
 
 						&.complete {
-							animation: anim-sway 2s infinite;
+							position: relative;
+							animation: anim-sway 1s infinite ease-in-out, anim-sway-start 1s ease-in-out;
+							&:after {
+								position: absolute;
+								top: -50%;
+								content: "";
+								display: block;
+								height: 200%;
+								width: 20%;
+								background: white;
+								transform: rotate(30deg);
+								animation: anim-shine 1s infinite ease-in;
+							}
 						}
 					}
 				}

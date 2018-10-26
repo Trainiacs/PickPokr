@@ -2,13 +2,18 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 import {RootPanel} from "../components/panels";
+import {EventBackend} from "./Backend";
 
 type ApplicationState = "start" | "failedSignIn" | "signedIn";
 
 export class Application {
 	private _state: ApplicationState;
+	private _backend: EventBackend;
 
-	constructor() {
+	constructor(backend: EventBackend) {
+		this._backend = backend;
+		this._backend.listen("error", (a: any) => console.log(a));
+		this._backend.connect("test_user");
 		this._state = "start";
 	}
 

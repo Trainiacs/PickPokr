@@ -26,7 +26,7 @@ export class GamePanel extends React.Component<Props, State> {
 							<div className={"word grid-columns-1 " + (word.value.toLowerCase() === answerList[wk].toLowerCase() ? "correct" : "")} key={wk}>
 								<div className={"question " + (word.question === undefined ? "not-in-collection" : "")} style={{animationDelay: (0.05 * wk) + "s"}} onClick={() => this._onWordSelected(word, wk)}>?</div>
 								{word.value.split("").map((char: string, ck: number) => (
-									<div className={"char" + (ck === 0 ? " primary" : " secondary") + (completeKey ? " complete" : "")} style={{animationDelay: (0.05 * wk) + "s"}} key={ck}>
+									<div className={"char" + (ck === 0 ? " primary" : " secondary") + (completeKey ? " complete" : "")} style={{animationDelay: (0.15 * wk) + "s"}} key={ck}>
 										{(answerList[wk][ck] || "-").toUpperCase()}
 									</div>
 								))}

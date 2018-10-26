@@ -46,6 +46,7 @@ module.exports = {
 					{ from: './node_modules/react/umd/react.' + reactMode + '.js', to: distPath + '/vendor/react.js' },
 					{ from: './node_modules/react-dom/umd/react-dom.' + reactMode + '.js', to: distPath + '/vendor/react-dom.js' },
 					{ from: './img', to: distPath + '/img' },
+					{ from: './fonts', to: distPath + '/fonts' },
 					{ from: './index.html', to: distPath },
 				])
 			],

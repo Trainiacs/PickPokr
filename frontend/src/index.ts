@@ -1,4 +1,8 @@
-import {Application} from "./modules/Application";
+import {
+	Application,
+	WebSocketBackend
+} from "./modules";
 
-let application = new Application();
+let backend = new WebSocketBackend("http://snajs.se");
+let application = new Application(backend);
 application.init();
