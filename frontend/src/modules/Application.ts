@@ -2,23 +2,68 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 import {RootPanel} from "../components/panels";
-import {EventBackend} from "./Backend";
+import {
+	EventBackend,
+	GameManager,
+	LobbyManager,
+	GamePlayer,
+} from "./";
 
-type ApplicationState = "start" | "failedSignIn" | "signedIn";
+type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game";
 
 export class Application {
 	private _state: ApplicationState;
 	private _backend: EventBackend;
 
+	private _lobbyManager: LobbyManager;
+	private _gameManager: GameManager;
+	private _message: string;
+	private _playerSelf: GamePlayer;
+
 	constructor(backend: EventBackend) {
 		this._backend = backend;
 		this._backend.listen("error", (a: any) => console.log(a));
-		this._backend.connect("test_user");
-		this._state = "start";
+		this._backend.listen("roaster", this._onRosterEvent.bind(this));
+		this._backend.listen("challange", this._onChallangeEvent.bind(this));
+
+		this._lobbyManager = new LobbyManager();
+		this._gameManager = new GameManager();
 	}
 
 	async init() {
-		this._setState("start");
+		this._state = "start";
+		this._connect("test_user");
+	}
+
+	private _connect(nick: string) {
+		this._setWaiting("Waiting for connection");
+		this._playerSelf = {
+			name: nick,
+			ready: true,
+		};
+		this._backend.connect(nick);
+	}
+
+	private _onRosterEvent(ev: {type: "roaster", payload: {players: string[]}}) {
+		this._lobbyManager.setPlayers(LobbyManager.importPlayers(ev.payload.players));
+		if (this._state === "waiting") {
+			this._state = "lobby";
+		}
+		this._render();
+	}
+
+	private _onChallangeEvent(ev: {type: "challange", payload: {words: {length: number, question?: string}[]}}) {
+		let words = GameManager.importWords(ev.payload.words);
+		this._gameManager.setWords(words);
+		if (this._state === "lobby") {
+			this._state = "game";
+		}
+		this._render();
+	}
+
+	private _setWaiting(message: string) {
+		this._message = message;
+		this._state = "waiting";
 	}
 
 	private _setState(state: ApplicationState) {
@@ -28,21 +73,18 @@ export class Application {
 
 	private async _signIn(username: string, password: string) {
 		let status = true; //= await this._dataSource.init(username, password);
-		this._setState(status ? "signedIn" : "failedSignIn");
-	}
-
-	private _getPanel(state: ApplicationState): any {
-		switch(this._state) {
-			case "start": {
-				return React.createElement(RootPanel, {
-				});
-			}
-		}
+		
 	}
 
 	private _render() {
 		ReactDOM.render(
-			this._getPanel(this._state),
+			React.createElement(RootPanel, {
+				route: this._state,
+				message: this._message,
+				gameManager: this._gameManager,
+				lobbyManager: this._lobbyManager,
+				playerSelf: this._playerSelf,
+			}),
 			document.getElementById("root")
 		);
 	}

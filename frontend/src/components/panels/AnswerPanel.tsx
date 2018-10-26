@@ -27,7 +27,7 @@ export class AnswerPanel extends React.Component<Props, State> {
 					</div>
 				</div>
 				<div className="answer">
-					<input type="text" value={value} maxLength={word.value.length} onChange={this._onAnswerChange.bind(this)} />
+					<input type="text" value={value.toUpperCase()} maxLength={word.value.length} onChange={this._onAnswerChange.bind(this)} />
 					<button onClick={() => onAnswerSubmit(value)}>Answer</button>
 				</div>
 			</div>

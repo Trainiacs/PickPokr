@@ -6,64 +6,49 @@ import {LobbyPanel} from "./LobbyPanel";
 import {
 	GameWord,
 	GamePlayer,
+	GameManager,
+	LobbyManager,
 } from "../../modules";
 
-interface Props {
-
+type Props = {
+	route: string;
+	message: string;
+	gameManager: GameManager;
+	lobbyManager: LobbyManager;
+	playerSelf: GamePlayer;
 }
 
 interface State {
 	currentWordIndex?: number;
-	answerList: string[];
-	playerSelf: GamePlayer;
 }
 
 export class RootPanel extends React.Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
 		this.state = {
-			currentWordIndex: 0,
-			answerList: [],
-			playerSelf: {
-				name: "Mattias",
-				ready: false,
-			}
 		};
 	}
 
 	render() {
 		let currentWordIndex = this.state.currentWordIndex;
+		let wordList = this.props.gameManager.words;
+		let answerList = this.props.gameManager.answers;
 
-		let wordList: GameWord[] = [
-			{question: "Kampen om en sak som gjorde något och det var roligt när det blev knasigt för det var inte som det brukar eller hur?", value: "strid"},
-			{value: "trav"},
-			{value: "uggla"},
-			{value: "grav"},
-			{value: "agitatör"}
-		];
-		let playerList: GamePlayer[] = [
-			{name: "Dirk", ready: true},
-			{name: "McNeil", ready: true},
-			{name: "Stuge", ready: true},
-			{name: "Elminster", ready: true},
-			{name: "Woody", ready: false},
-		];
-		let playerSelf = this.state.playerSelf;
-		let answerList: string[] = this.state.answerList;
-		let currentPanel = "lobby";//currentWordIndex === undefined ? "game" : "answer";
+		let playerList = this.props.lobbyManager.players;
+		let playerSelf = this.props.playerSelf;
+		let route = this.props.route;
 
 		return (
 			<div className="panel root-panel">
 				{((panel: string) => {
 					switch(panel) {
-						case "game": return (
+						case "game": return currentWordIndex === undefined ? (
 							<GamePanel 
 								wordList={wordList}
 								answerList={wordList.map((w: GameWord, i: number) => answerList[i] || "")}
 								onWordSelected={this._onWordSelected.bind(this)}
 							/>
-						);
-						case "answer": return (
+						) : (
 							<AnswerPanel 
 								word={wordList[currentWordIndex]}
 								value={answerList[currentWordIndex] || ""}
@@ -82,16 +67,16 @@ export class RootPanel extends React.Component<Props, State> {
 							<div />
 						);
 					}
-				})(currentPanel)}
+				})(route)}
 				
 			</div>
 		);
 	}
 
 	private _onPlayerReadyStateChanged(ready: boolean) {
-		let playerSelf: GamePlayer = Object.assign({}, this.state.playerSelf);
-		playerSelf.ready = ready;
-		this.setState({playerSelf: playerSelf});
+		//let playerSelf: GamePlayer = Object.assign({}, this.state.playerSelf);
+		//playerSelf.ready = ready;
+		//this.setState({playerSelf: playerSelf});
 	}
 
 	private _onWordSelected(word: GameWord, wordIndex: number) {
@@ -99,9 +84,8 @@ export class RootPanel extends React.Component<Props, State> {
 	}
 
 	private _onWordValueChanged(wordIndex: number, value: string) {
-		let answerList = this.state.answerList.slice(0, this.state.answerList.length);
-		answerList[wordIndex] = value;
-		this.setState({answerList: answerList});
+		this.props.gameManager.setAnswer(wordIndex, value);
+		this.forceUpdate();
 	}
 
 	private _onAnswerSubmit(wordIndex: number, value: string) {
