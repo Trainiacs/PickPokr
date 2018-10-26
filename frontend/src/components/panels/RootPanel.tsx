@@ -2,6 +2,7 @@ import * as React from "react";
 import {GamePanel} from "./GamePanel";
 import {AnswerPanel} from "./AnswerPanel";
 import {LobbyPanel} from "./LobbyPanel";
+import {WaitingPanel} from "./WaitingPanel";
 
 import {
 	GameWord,
@@ -37,6 +38,7 @@ export class RootPanel extends React.Component<Props, State> {
 		let playerList = this.props.lobbyManager.players;
 		let playerSelf = this.props.playerSelf;
 		let route = this.props.route;
+		let message = this.props.message;
 
 		return (
 			<div className="panel root-panel">
@@ -61,6 +63,11 @@ export class RootPanel extends React.Component<Props, State> {
 								playerList={playerList}
 								playerSelf={playerSelf}
 								onReadyStateChanged={this._onPlayerReadyStateChanged.bind(this)}
+							/>
+						);
+						case "waiting": return (
+							<WaitingPanel
+								message={message}
 							/>
 						);
 						default: return (

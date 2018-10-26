@@ -390,3 +390,29 @@ body {
 		}
 	}
 }
+
+.waiting-panel {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	min-width: 100vw;
+	min-height: 100vh;
+	background: $theme-block-background;
+	color: $theme-block-color;
+
+	& > .waiting {
+		&:before {
+			display: block;
+			border-radius: 50%;
+			width: $theme-click-size * 3;
+			height: $theme-click-size * 3;
+			content: "\f017";
+			font-family: 'Font Awesome 5 Free';
+			font-size: $theme-click-size * 3;
+			background: $theme-block-color;
+			color: $theme-block-background;
+			margin-bottom: $theme-margin;
+		}
+	}
+}

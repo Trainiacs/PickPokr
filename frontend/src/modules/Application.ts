@@ -64,6 +64,7 @@ export class Application {
 	private _setWaiting(message: string) {
 		this._message = message;
 		this._state = "waiting";
+		this._render();
 	}
 
 	private _setState(state: ApplicationState) {
