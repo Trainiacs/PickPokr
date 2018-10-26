@@ -1,3 +1,7 @@
+* {
+	box-sizing: border-box;
+}
+
 body {
 	background: #eee;
 	padding: 0;
@@ -9,6 +13,18 @@ body {
 	width: 100vw;
 }
 
+@keyframes anim-scale-in {
+	0% {
+		transform: scale(0);
+	}
+	90% {
+		transform: scale(1.1);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
 $theme-margin: 10px;
 $theme-click-size: 50px;
 $theme-soft-size: 5px;
@@ -16,9 +32,13 @@ $theme-picture-size: 200px;
 
 $theme-primary-background: #990;
 $theme-secondary-background: #fff;
+$theme-block-background: #333;
 
 $theme-primary-color: #fff;
 $theme-secondary-color: #000;
+$theme-block-color: #eee;
+
+$theme-max-read-width: 600px;
 
 .game-panel {
 	background: url("img/bg0.jpg");
@@ -38,7 +58,7 @@ $theme-secondary-color: #000;
 			left: 0;
 			right: 0;
 			bottom: 0;
-			background: #333;
+			background: $theme-block-background;
 			z-index: 0;
 		}
 
@@ -49,6 +69,7 @@ $theme-secondary-color: #000;
 			overflow: auto;
 			padding: 0 $theme-margin;
 			z-index: 1;
+			max-width: 100vw;
 
 			.word {
 				display: inline-block;
@@ -58,17 +79,26 @@ $theme-secondary-color: #000;
 				vertical-align: text-top;
 
 				.question {
+					animation: anim-scale-in 0.2s ease-in-out ;
 					border-radius: 50%;
 					width: $theme-click-size;
 					height: $theme-click-size;
 					text-align: center;
 					line-height: $theme-click-size;
 					background: $theme-secondary-background;
-					color: $theme-secondary-color;
+					color: $theme-primary-background;
+					border: solid 2px $theme-primary-background;
+					transition: border;
 
 					box-shadow: 0px $theme-soft-size $theme-soft-size rgba(0, 0, 0, 0.5);
 					margin-bottom: $theme-margin;
 					font-weight: bold;
+
+
+					&.not-in-collection {
+						border: solid 0px $theme-primary-background;
+						color: $theme-secondary-color;
+					}
 				}
 
 				.char {
@@ -89,6 +119,26 @@ $theme-secondary-color: #000;
 					}
 				}
 			}
+		}
+	}
+}
+
+.answer-panel {
+	.question {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		min-height: $theme-picture-size;
+		max-width: 100vw;
+		background: $theme-block-background;
+		color: $theme-block-color;
+		font-size: 25px;
+		padding: $theme-margin * 2;
+
+		& > .content {
+			text-align: center;
+			max-width: $theme-max-read-width;
 		}
 	}
 }
