@@ -1,3 +1,20 @@
+$theme-margin: 10px;
+$theme-click-size: 50px;
+$theme-soft-size: 5px;
+$theme-picture-size: 200px;
+
+$theme-primary-background: #990;
+$theme-secondary-background: #fff;
+$theme-block-background: #333;
+
+$theme-primary-color: #fff;
+$theme-secondary-color: #000;
+$theme-block-color: #eee;
+
+$theme-max-read-width: 600px;
+
+$theme-font: Verdana, Geneva, Tahoma, sans-serif;
+
 * {
 	box-sizing: border-box;
 }
@@ -6,7 +23,8 @@ body {
 	background: #eee;
 	padding: 0;
 	margin: 0;
-	font-family: Verdana, Geneva, Tahoma, sans-serif;
+	font-family: $theme-font;
+	user-select: none;
 }
 
 .panel {
@@ -24,21 +42,6 @@ body {
 		transform: scale(1);
 	}
 }
-
-$theme-margin: 10px;
-$theme-click-size: 50px;
-$theme-soft-size: 5px;
-$theme-picture-size: 200px;
-
-$theme-primary-background: #990;
-$theme-secondary-background: #fff;
-$theme-block-background: #333;
-
-$theme-primary-color: #fff;
-$theme-secondary-color: #000;
-$theme-block-color: #eee;
-
-$theme-max-read-width: 600px;
 
 .game-panel {
 	background: url("img/bg0.jpg");
@@ -140,6 +143,42 @@ $theme-max-read-width: 600px;
 		& > .content {
 			text-align: center;
 			max-width: $theme-max-read-width;
+		}
+	}
+
+	.answer {
+		max-width: $theme-max-read-width;
+		margin: auto;
+		margin-top: $theme-margin;
+		padding: $theme-margin;
+
+		input {
+			display: block;
+			width: 100%;
+			border: none;
+			border-radius: $theme-soft-size;
+			text-align: center;
+			font-family: $theme-font;
+			font-size: 25px;
+			padding: $theme-margin;
+		}
+
+		button {
+			display: block;
+			width: 100%;
+			border: none;
+			border-radius: $theme-soft-size;
+			padding: $theme-margin;
+			margin-top: $theme-margin;
+			text-decoration: none;
+			background: $theme-primary-background;
+			color: $theme-primary-color;
+			font-family: $theme-font;
+			font-size: 25px;
+			cursor: pointer;
+			text-align: center;
+			-webkit-appearance: none;
+			-moz-appearance: none;
 		}
 	}
 }

@@ -10,6 +10,7 @@ interface Props {
 
 interface State {
 	currentWordIndex?: number;
+	answerList: string[];
 }
 
 export class RootPanel extends React.Component<Props, State> {
@@ -17,6 +18,7 @@ export class RootPanel extends React.Component<Props, State> {
 		super(props);
 		this.state = {
 			currentWordIndex: 0,
+			answerList: [],
 		};
 	}
 
@@ -30,6 +32,7 @@ export class RootPanel extends React.Component<Props, State> {
 			{value: "grav"},
 			{value: "agitatör"}
 		];
+		let answerList: string[] = this.state.answerList;
 		let currentPanel = currentWordIndex === undefined ? "game" : "answer";
 
 		return (
@@ -37,13 +40,18 @@ export class RootPanel extends React.Component<Props, State> {
 				{((panel: string) => {
 					switch(panel) {
 						case "game": return (
-							<GamePanel wordList={wordList} onWordSelected={this._onWordSelected.bind(this)}/>
+							<GamePanel 
+								wordList={wordList}
+								answerList={answerList}
+								onWordSelected={this._onWordSelected.bind(this)}
+							/>
 						);
 						case "answer": return (
 							<AnswerPanel 
-								word={wordList[currentWordIndex]} value={""}
+								word={wordList[currentWordIndex]}
+								value={answerList[currentWordIndex] || ""}
 								onValueChange={(value: string) => this._onWordValueChanged(currentWordIndex, value)}
-								onAnswerSubmit={(value: string) => this._onWordValueChanged(currentWordIndex, value)}
+								onAnswerSubmit={(value: string) => this._onAnswerSubmit(currentWordIndex, value)}
 							/>
 						);
 						default: return (
@@ -61,6 +69,13 @@ export class RootPanel extends React.Component<Props, State> {
 	}
 
 	private _onWordValueChanged(wordIndex: number, value: string) {
+		let answerList = this.state.answerList.slice(0, this.state.answerList.length);
+		answerList[wordIndex] = value;
+		this.setState({answerList: answerList});
+	}
+
+	private _onAnswerSubmit(wordIndex: number, value: string) {
+		this._onWordValueChanged(wordIndex, value);
 		this.setState({currentWordIndex: undefined});
 	}
 }

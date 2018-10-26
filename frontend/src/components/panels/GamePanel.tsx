@@ -4,6 +4,7 @@ import {GameWord} from "../../modules";
 
 interface Props {
 	wordList: GameWord[];
+	answerList: string[];
 	onWordSelected(word: GameWord, wordIndex: number): void;
 }
 
@@ -15,6 +16,7 @@ export class GamePanel extends React.Component<Props, State> {
 
 	public render() {
 		let wordList = this.props.wordList;
+		let answerList = this.props.answerList;
 		return (
 			<div className="game-panel panel">
 				<div className="game-container">
@@ -24,7 +26,7 @@ export class GamePanel extends React.Component<Props, State> {
 								<div className={"question " + (word.question === undefined ? "not-in-collection" : "")} onClick={() => this._onWordSelected(word, wk)}>?</div>
 								{word.value.split("").map((char: string, ck: number) => (
 									<div className={"char " + (ck === 0 ? "primary" : "secondary")} key={ck}>
-										{/*char.toUpperCase()*/"-"}
+										{(answerList[wk] && answerList[wk][ck] || "-").toUpperCase()}
 									</div>
 								))}
 							</div>
