@@ -404,6 +404,7 @@ button {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	overflow: hidden;
 
 	min-width: 100%;
 	min-height: 100vh;
@@ -432,18 +433,49 @@ button {
 	}
 
 	&.winner {
+		position: relative;
 		background: $theme-primary-background;
 		color: $theme-primary-color;
+		overflow: hidden;
 
 		button {
 			background: $theme-primary-color;
 			color: $theme-primary-background;
+		}
+
+		&:after {
+			position: absolute;
+			top: -50%;
+			content: "";
+			display: block;
+			height: 200%;
+			width: 20%;
+			background: white;
+			transform: rotate(30deg);
+			animation: anim-shine 1s infinite ease-in;
+		}
+
+		& > .info.winner:before {
+			content: "\f164";
+			animation: anim-sway 2s infinite;
+			font-size: $theme-click-size * 2;
 		}
 	}
 
 	&.looser {
 		background: $theme-bad-background;
 		color: $theme-bad-color;
+
+		button {
+			background: $theme-bad-color;
+			color: $theme-bad-background;
+		}
+
+		& > .info.looser:before {
+			content: "\f5b4";
+			animation: anim-sway 2s infinite;
+			font-size: $theme-click-size * 2;
+		}
 	}
 
 	& > .info.waiting:before {
