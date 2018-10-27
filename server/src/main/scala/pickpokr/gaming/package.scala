@@ -10,4 +10,5 @@ package object gaming {
   type Game = ActorRef[Game.Command]
   type Train = ActorRef[Train.Command]
   type Lobby = ActorRef[Lobby.Command]
+  val minGameSize = 2
 }

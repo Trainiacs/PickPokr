@@ -185,7 +185,7 @@ object Train extends JsonSupport {
             ctx.self ! CheckRoaster
             behavior(up, updatedRoaster, games)
           }
-        case CheckRoaster if roaster.nicks.size > 2 =>
+        case CheckRoaster if roaster.nicks.size > minGameSize =>
           val gamePlayers = roaster.nicks.flatMap(players.get)
           val game = ctx.spawn(Game.behavior(gamePlayers), s"game-${games.size + 1}")
           behavior(players, Roaster(), game :: games)
