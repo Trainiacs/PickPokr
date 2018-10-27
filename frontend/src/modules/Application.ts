@@ -52,6 +52,7 @@ export class Application {
 	}
 
 	private _onWinnerEvent(ev: {type: "winner", payload: {nick: string, keyword: string}}) {
+		this._message = "The winner is " + ev.payload.nick + ". With the word \"" + ev.payload.keyword + "\"";
 		this._setState(ev.payload.nick === this._playerSelf.name ? "winner" : "looser");
 	}
 

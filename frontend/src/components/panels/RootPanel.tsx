@@ -119,14 +119,14 @@ export class RootPanel extends React.Component<Props, State> {
 						case "winner": return (
 							<InfoPanel
 								type="winner"
-								message={"Winner: " + playerSelf.name}
+								message={"You are the winner"}
 								onConfirm={() => this._triggerEvent("setRoute", "game")}
 							/>
 						);
 						case "looser": return (
 							<InfoPanel
 								type="looser"
-								message={"Looser: " + playerSelf.name}
+								message={message}
 								onConfirm={() => this._triggerEvent("setRoute", "game")}
 							/>
 						);
