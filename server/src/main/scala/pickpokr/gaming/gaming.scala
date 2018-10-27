@@ -23,7 +23,8 @@ object Player {
   case class Guess(literal: String) extends Command
   case class Winner(nick: Nick, keyword: String) extends Command
   case class Pin(value: Int) extends Command
-  case class ExchangeCommit(nick: Nick) extends Command
+  case class ExchangeCommit(player: Player) extends Command
+  case class ExchangeChallenge(index: Int, challenge: Challenge) extends Command
   case class Challenge(query: Option[String], length: Int)
 
   def waiting(client: WSClient, nick: Nick): Behavior[Command] = {
@@ -41,8 +42,13 @@ object Player {
       case Pin(pin) ⇒
         client ! Client.Pin(pin).toTextMessage
         same
-      case ExchangeCommit(otherNick) ⇒
+      case ExchangeCommit(player) ⇒
+        player ! ExchangeChallenge(index, challenges(index))
         same
+      case ExchangeChallenge(i, challenge) ⇒
+        val uc = challenges.updated(i, challenge)
+        client ! clientChallengeMessage(challenges)
+        playing(client, nick, game, index, uc)
       case Guess(guess) =>
         game ! Game.Guess(nick, guess)
         same
@@ -50,6 +56,9 @@ object Player {
         client ! Client.Winner(winner, keyword).toTextMessage
         same // Todo end game
     }
+  }
+  private def clientChallengeMessage(challenges: List[Challenge]) = {
+    Client.Challenge(challenges.map(c ⇒ (c.query, c.length))).toTextMessage
   }
 }
 
@@ -195,8 +204,10 @@ object Train extends JsonSupport {
           behavior(players, roaster, games, exchanges + (pin → nick))
         case ExchangeCommit(nick, pin) ⇒
           exchanges.get(pin.value).foreach { otherNick ⇒
-            players(otherNick) ! Player.ExchangeCommit(nick)
-            players(nick) ! Player.ExchangeCommit(otherNick)
+            val player = players(nick)
+            val otherPlayer = players(otherNick)
+            player ! Player.ExchangeCommit(otherPlayer)
+            otherPlayer ! Player.ExchangeCommit(player)
           }
           same
       }
