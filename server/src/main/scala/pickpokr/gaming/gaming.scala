@@ -232,7 +232,7 @@ object QuestionSet {
   def apply(n: Int): QuestionSet = {
     val words = wordsByLength(n)
     val keyword = words(random.nextInt(words.size))
-    val qs = keyword.map(questionsByInitialCharacter).map(_.head).map {
+    val qs = keyword.toUpperCase.map(questionsByInitialCharacter).map(_.head).map {
       case (answer, query) => Question(query, answer)
     }.toList
     QuestionSet(keyword, qs)
