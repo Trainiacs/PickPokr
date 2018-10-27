@@ -56,8 +56,8 @@ export class Application {
 		this._setState(ev.payload.nick === this._playerSelf.name ? "winner" : "looser");
 	}
 
-	private _onBadGuessEvent(ev: {type: "winner", payload: {nick: string, keyword: string}}) {
-		this._setInfo("Bad guess \"" + ev.payload.keyword + "\" by " + ev.payload.nick);
+	private _onBadGuessEvent(ev: {type: "winner", payload: {nick: string, guess: string}}) {
+		this._setInfo("Bad guess \"" + ev.payload.guess + "\" by " + ev.payload.nick);
 	}
 
 	private _onExchangePinEvent(ev: {type: "exchangePin", payload: string}) {

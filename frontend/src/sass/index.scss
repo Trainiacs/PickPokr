@@ -424,7 +424,7 @@ button {
 			text-align: center;
 			background: $theme-block-color;
 			color: $theme-block-background;
-			margin-bottom: $theme-margin;
+			margin: $theme-margin auto;
 		}
 
 		& > .message {
