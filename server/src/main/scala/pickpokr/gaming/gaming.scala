@@ -258,6 +258,7 @@ object QuestionSet {
   lazy val questionsByInitialCharacter = questionsData.
     split('\n').
     map(_.split('=')).
+    filter(_.size >= 2).
     map(a => a(1).trim -> a(0).trim).
     toList.
     groupBy(_._1.head)
