@@ -235,6 +235,7 @@ object QuestionSet {
     val qs = keyword.toUpperCase.map(questionsByInitialCharacter).map(_.head).map {
       case (answer, query) => Question(query, answer)
     }.toList
+    println(s"keyword = $keyword, questions = ${qs.mkString("\n\t", "\n\t", "")}")
     QuestionSet(keyword, qs)
   }
   lazy val wordsByLength = wordsData.
@@ -259,7 +260,7 @@ object QuestionSet {
     split('\n').
     map(_.split('=')).
     filter(_.size >= 2).
-    map(a => a(1).trim -> a(0).trim).
+    map(a => a(0).trim -> a(1).trim).
     toList.
     groupBy(_._1.head)
   val wordsData =
@@ -563,90 +564,89 @@ object QuestionSet {
     """.stripMargin.toLowerCase()
   val questionsData =
     """
-      |Highnose=Höganäs
-      |Charlestown=Karlstad
-      |Housemill=Husqvarna
-      |Crown of country=Landskrona
-      |Livelongtime=Borlänge
-      |Crowd=Skara
-      |Pennybridge=Örebro
-      |Healthyvillagemountain=Sundbyberg
-      |Rivergoal=Åmål
-      |Wring the neck of=Nacka
-      |Smallpants=Trosa
-      |Castle of threesmile=Trelleborg
-      |Whatstone=Vadstena
-      |East of healthy=Östersund
-      |Speakagainst=Mottala
-      |Knowland=Vetlanda
-      |Bay of eagleshield=Örnsköldsvik
-      |Newbridge=Nybro
-      |Heresneezedduck=Härnösand
-      |Onebying=Enköping
-      |Castle of friends=Vänersborg
-      |Be=Vara
-      |Growlake=Växsjö
-      |Springyard=Vårgårda
-      |Healthy of oxloose=Oxelösund
-      |Mother of roor=Mora Träsk
-      |Fairtown=Fagersta
-      |Mountain of atewide=Åtvidaberg
-      |Yes=Hjo
-      |Islet of angel=Ängelholm
-      |Manforest=Karlskoga
-      |Noselake=Nässjö
-      |Wolfisland=Vargön
-      |Islet of animals=Djursholm
-      |Wheremountain=Varberg
-      |Olympic village=Osby
-      |Buy a harbour=Köpenhamn
-      |Cabbage Creek=Kålbäck
-      |Nobay=Kivik
-      |ElevatorNobody=Hisingen
-      |Christine Harbour=Kristinehamn
-      |Hookif=Krokom
-      |Tightbay=Trångsviken
-      |Did they push=Skövde
-      |King River=Kungälv
-      |Destiny High=Ödeshög
-      |Liveit=Boden
-      |Only=Bara
-      |Hands up river Råneå
-      |Cheesbay=Ostvik
-      |West Ridge=Västerås
-      |Marypeace=Mariefred
-      |Heavy elecric town=Tungelsta
-      |New nose habour=Nynäshamn
-      |Städer omskrivna på svenska
-      |Insektsflicka=Malmö
-      |Flickbyxa=Trosa
-      |Pojkfästning=Göteborg
-      |Spänningsort=Strömstad
-      |Vattenmat=Åmål
-      |Myntspång=Örebro
-      |Klokt samhälle=Visby
-      |Manort=Karlstad
-      |Trädvatten=Eksjö
-      |Folksamling=Skara
-      |Barsk udde=Strängnäs
-      |Fågelhöjd=Tranås
-      |Skogsväsenmössan=Trollhättan
-      |Omfamningsfall=Kramfors
-      |Väderstreckssamhälle=Söderköping
-      |Stråort=Halmstad
-      |Infektionshärdshöjd=Varberg
-      |Trädsamling=Lund
-      |Regentbakåt=Kungsbacka
-      |Växtsamhälle=Ljungby
-      |Kula Udde=Bollnäs
-      |Metallhöjden=Malmberget
-      |Valrossen=Sälen
-      |Rikepeng=Landskrona
-      |Insektsbarn=Malung
-      |Stor böld=Varberg
-      |Ramlar du?=Dalarö
-      |Barnmatsamhälle=Vällingby
-    """.stripMargin.toLowerCase()
+      |Höganäs=Highnose
+      |Karlstad=Charlestown
+      |Husqvarna=Housemill
+      |Landskrona=Crown of country
+      |Borlänge=Livelongtime
+      |Skara=Crowd
+      |Örebro=Pennybridge
+      |Sundbyberg=Healthyvillagemountain
+      |Åmål=Rivergoal
+      |Nacka=Wring the neck of
+      |Trosa=Smallpants
+      |Trelleborg=Castle of threesmile
+      |Vadstena=Whatstone
+      |Östersund=East of healthy
+      |Mottala=Speakagainst
+      |Vetlanda=Knowland
+      |Örnsköldsvik=Bay of eagleshield
+      |Nybro=Newbridge
+      |Härnösand=Heresneezedduck
+      |Enköping=Onebying
+      |Vänersborg=Castle of friends
+      |Vara=Be
+      |Växsjö=Growlake
+      |Vårgårda=Springyard
+      |Oxelösund=Healthy of oxloose
+      |Mora Träsk=Mother of roor
+      |Fagersta=Fairtown
+      |Åtvidaberg=Mountain of atewide
+      |Hjo=Yes
+      |Ängelholm=Islet of angel
+      |Karlskoga=Manforest
+      |Nässjö=Noselake
+      |Vargön=Wolfisland
+      |Djursholm=Islet of animals
+      |Varberg=Wheremountain
+      |Osby=Olympic village
+      |Köpenhamn=Buy a harbour
+      |Kålbäck=Cabbage Creek
+      |Kivik=Nobay
+      |Hisingen=ElevatorNobody
+      |Kristinehamn=Christine Harbour
+      |Krokom=Hookif
+      |Trångsviken=Tightbay
+      |Skövde=Did they push
+      |Kungälv=King River
+      |Ödeshög=Destiny High
+      |Boden=Liveit
+      |Bara=Only
+      |Råneå=Hands up river
+      |Ostvik=Cheesbay
+      |Västerås=West Ridge
+      |Mariefred=Marypeace
+      |Tungelsta=Heavy elecric town
+      |Nynäshamn=New nose habour
+      |Malmö=Insektsflicka
+      |Trosa=Flickbyxa
+      |Göteborg=Pojkfästning
+      |Strömstad=Spänningsort
+      |Åmål=Vattenmat
+      |Örebro=Myntspång
+      |Visby=Klokt samhälle
+      |Karlstad=Manort
+      |Eksjö=Trädvatten
+      |Skara=Folksamling
+      |Strängnäs=Barsk udde
+      |Tranås=Fågelhöjd
+      |Trollhättan=Skogsväsenmössan
+      |Kramfors=Omfamningsfall
+      |Söderköping=Väderstreckssamhälle
+      |Halmstad=Stråort
+      |Varberg=Infektionshärdshöjd
+      |Lund=Trädsamling
+      |Kungsbacka=Regentbakåt
+      |Ljungby=Växtsamhälle
+      |Bollnäs=Kula Udde
+      |Malmberget=Metallhöjden
+      |Sälen=Valrossen
+      |Landskrona=Rikepeng
+      |Malung=Insektsbarn
+      |Varberg=Stor böld
+      |Dalarö=Ramlar du?
+      |Vällingby=Barnmatsamhälle
+    """.stripMargin
 }
 
 object Words2 {
