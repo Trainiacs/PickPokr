@@ -15,7 +15,7 @@ export class InfoPanel extends React.Component<Props, State> {
 		let message = this.props.message;
 		let onConfirm = this.props.onConfirm;
 		return (
-			<div className="info-panel panel">
+			<div className={"info-panel panel " + type}>
 				<div className={"info " + type}>
 					<div className="message">{message}</div>
 					{onConfirm ? (

@@ -7,10 +7,12 @@ $theme-picture-size: 200px;
 
 $theme-primary-background: #990;
 $theme-secondary-background: #fff;
+$theme-bad-background: #900;
 $theme-block-background: #333;
 
 $theme-primary-color: #fff;
 $theme-secondary-color: #000;
+$theme-bad-color: #fff;
 $theme-block-color: #eee;
 
 $theme-max-read-width: 600px;
@@ -424,6 +426,21 @@ button {
 		& > .message {
 			text-align: center;
 		}
+	}
+
+	&.winner {
+		background: $theme-primary-background;
+		color: $theme-primary-color;
+
+		button {
+			background: $theme-primary-color;
+			color: $theme-primary-background;
+		}
+	}
+
+	&.looser {
+		background: $theme-bad-background;
+		color: $theme-bad-color;
 	}
 
 	& > .info.waiting:before {

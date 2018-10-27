@@ -37,7 +37,7 @@ export class Application {
 
 	async init() {
 		this._state = "start";
-		this._connect("test_user3");
+		this._connect("nick_" + Math.floor(Math.random() * 999));
 	}
 
 	private _connect(nick: string) {
