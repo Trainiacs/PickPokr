@@ -1,14 +1,13 @@
 package pickpokr
 package gaming
 
-import java.util.concurrent.TimeUnit
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors._
 import akka.http.scaladsl.model.ws.TextMessage
 import pickpokr.gaming.http.JsonSupport
 import spray.json.JsValue
+
 import scala.annotation.tailrec
-import scala.concurrent.duration.FiniteDuration
 
 case class Nick(literal: String)
 case class Pin(value: Int)
@@ -155,7 +154,6 @@ object Train extends JsonSupport {
   sealed trait Command
   case class ClientConnected(nick: Nick, client: WSClient) extends Command
   case object StartGame extends Command
-  private case object AutoStart extends Command
   private case object CheckRoaster extends Command
   case class Guess(nick: Nick, value: String) extends Command
   case class RequestExchange(nick: Nick) extends Command
@@ -163,52 +161,47 @@ object Train extends JsonSupport {
 
   def behavior(players: Map[Nick, Player] = Map.empty, roaster: Roaster = Roaster(), games: List[Game] = Nil, exchanges: Map[Int, Nick] = Map.empty, lastConnectAt:Long = 0): Behavior[Command] = {
     setup { ctx ⇒
-      withTimers { timers =>
-        timers.startPeriodicTimer("autostarter", AutoStart, FiniteDuration(10, TimeUnit.SECONDS))
-        receiveMessagePartial {
-          case ClientConnected(nick, client) =>
-            if (players.keySet.contains(nick)) {
-              client ! Client.Denied("Nick already taken").toTextMessage
-              same
-            } else {
-              val player = ctx.spawn(Player.waiting(client, nick), s"player-${nick.literal}")
-              val up = players.updated(nick, player)
-              val updatedRoaster = roaster.copy(nicks = nick :: roaster.nicks)
-              client ! Client.Roaster(updatedRoaster.nicks).toTextMessage
-              up.values.foreach(_ ! Player.UpdateRoaster(updatedRoaster))
-              if (up.keySet.size > maxGameSize) ctx.self ! StartGame
-              behavior(up, updatedRoaster, games, exchanges, System.currentTimeMillis())
-            }
-          case AutoStart =>
+      receiveMessagePartial {
+        case ClientConnected(nick, client) =>
+          if (players.keySet.contains(nick)) {
+            client ! Client.Denied("Nick already taken").toTextMessage
+            same
+          } else {
+            val player = ctx.spawn(Player.waiting(client, nick), s"player-${nick.literal}")
+            val up = players.updated(nick, player)
+            val updatedRoaster = roaster.copy(nicks = nick :: roaster.nicks)
+            client ! Client.Roaster(updatedRoaster.nicks).toTextMessage
+            up.values.foreach(_ ! Player.UpdateRoaster(updatedRoaster))
+            if (up.keySet.size > maxGameSize) ctx.self ! StartGame
             val now = System.currentTimeMillis()
-            if (now - lastConnectAt > autoStartIdle * 1000L) ctx.self ! StartGame
-            same
-          case StartGame if roaster.nicks.size >= minGameSize =>
-            val gamePlayers = roaster.nicks.flatMap(players.get)
-            val game = ctx.spawn(Game.behavior(gamePlayers), s"game-${games.size + 1}")
-            behavior(players, Roaster(), game :: games)
-          case Guess(nick, guess) ⇒
-            players(nick) ! Player.Guess(guess)
-            same
-          case RequestExchange(nick) ⇒
-            @tailrec
-            def generatePin(): Int = {
-              val pin = random.nextInt(10000)
-              if (!exchanges.keySet(pin)) pin
-              else generatePin()
-            }
-            val pin = generatePin()
-            players(nick) ! Player.Pin(pin)
-            behavior(players, roaster, games, exchanges + (pin → nick))
-          case ExchangeCommit(nick, pin) ⇒
-            exchanges.get(pin.value).foreach { otherNick ⇒
-              val player = players(nick)
-              val otherPlayer = players(otherNick)
-              player ! Player.ExchangeCommit(otherPlayer)
-              otherPlayer ! Player.ExchangeCommit(player)
-            }
-            same
-        }
+            if (now - lastConnectAt > 5*1000L) ctx.self ! StartGame
+            behavior(up, updatedRoaster, games, exchanges, now)
+          }
+        case StartGame if roaster.nicks.size >= minGameSize =>
+          val gamePlayers = roaster.nicks.flatMap(players.get)
+          val game = ctx.spawn(Game.behavior(gamePlayers), s"game-${games.size + 1}")
+          behavior(players, Roaster(), game :: games)
+        case Guess(nick, guess) ⇒
+          players(nick) ! Player.Guess(guess)
+          same
+        case RequestExchange(nick) ⇒
+          @tailrec
+          def generatePin(): Int = {
+            val pin = random.nextInt(10000)
+            if (!exchanges.keySet(pin)) pin
+            else generatePin()
+          }
+          val pin = generatePin()
+          players(nick) ! Player.Pin(pin)
+          behavior(players, roaster, games, exchanges + (pin → nick))
+        case ExchangeCommit(nick, pin) ⇒
+          exchanges.get(pin.value).foreach { otherNick ⇒
+            val player = players(nick)
+            val otherPlayer = players(otherNick)
+            player ! Player.ExchangeCommit(otherPlayer)
+            otherPlayer ! Player.ExchangeCommit(player)
+          }
+          same
       }
     }
   }
