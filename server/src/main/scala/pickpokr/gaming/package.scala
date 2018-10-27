@@ -13,5 +13,6 @@ package object gaming {
   type Lobby = ActorRef[Lobby.Command]
   val minGameSize = 3
   val maxGameSize = 12
+  val autoStartIdle = 30L
   val random = new SecureRandom()
 }
