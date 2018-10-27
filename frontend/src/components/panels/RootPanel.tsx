@@ -105,7 +105,7 @@ export class RootPanel extends React.Component<Props, State> {
 						);
 						case "info": return (
 							<InfoPanel
-								type="info"
+								type="information"
 								message={message}
 							/>
 						);
