@@ -253,6 +253,7 @@ button {
 	background-size: 100% auto;
 
 	.player-self {
+		overflow: hidden;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -267,6 +268,8 @@ button {
 			margin-left: $theme-margin * 3;
 			width: $theme-click-size * 3;
 			height: $theme-click-size * 3;
+			min-width: $theme-click-size * 3;
+			min-height: $theme-click-size * 3;
 			text-align: center;
 			text-shadow: none;
 			border-radius: 50%;
