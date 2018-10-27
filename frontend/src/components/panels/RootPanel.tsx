@@ -24,6 +24,7 @@ type Props = {
 
 interface State {
 	currentWordIndex?: number;
+	keywordGuess?: string;
 }
 
 export class RootPanel extends React.Component<Props, State> {
@@ -43,11 +44,17 @@ export class RootPanel extends React.Component<Props, State> {
 		let playerSelf = this.props.playerSelf || {name: "U da man", ready: true};
 		let route = this.props.route;
 		let message = this.props.message;
+		let keywordSum = answerList.reduce((acc, a) => acc + (a && a[0] || "*"), "").toUpperCase();
+		let keywordGuess: string = this.state.keywordGuess === undefined ? (
+			keywordSum
+		) : (
+			this.state.keywordGuess
+		);
 
 		return (
 			<div className="panel root-panel">
 				{route === "game" ? (
-					<TopBarPanel items={["share-all", "show-players"]} onItemClicked={this._onItemClicked.bind(this)}/>
+					<TopBarPanel items={["share-all", "show-players", "make-guess"]} onItemClicked={this._onItemClicked.bind(this)}/>
 				) : null}
 				{((panel: string) => {
 					switch(panel) {
@@ -63,6 +70,17 @@ export class RootPanel extends React.Component<Props, State> {
 								value={answerList[currentWordIndex] || ""}
 								onValueChange={(value: string) => this._onWordValueChanged(currentWordIndex, value)}
 								onAnswerSubmit={(value: string) => this._onAnswerSubmit(currentWordIndex, value)}
+							/>
+						);
+						case "makeGuess": return (
+							<AnswerPanel 
+								word={{value: keywordSum, question: "Guess the keyword!"}}
+								value={keywordGuess}
+								onValueChange={(value: string) => this._onKeywordGuessChange(value)}
+								onAnswerSubmit={(value: string) => {
+									this.setState({keywordGuess: undefined});
+									this._triggerEvent("makeGuess", value);
+								}}
 							/>
 						);
 						case "lobby": return (
@@ -85,6 +103,12 @@ export class RootPanel extends React.Component<Props, State> {
 								message={message}
 							/>
 						);
+						case "info": return (
+							<InfoPanel
+								type="information"
+								message={message}
+							/>
+						);
 						case "showPin": return (
 							<InfoPanel
 								type="pin"
@@ -95,14 +119,14 @@ export class RootPanel extends React.Component<Props, State> {
 						case "winner": return (
 							<InfoPanel
 								type="winner"
-								message={"Winner: " + playerSelf.name}
+								message={"You are the winner"}
 								onConfirm={() => this._triggerEvent("setRoute", "game")}
 							/>
 						);
 						case "looser": return (
 							<InfoPanel
 								type="looser"
-								message={"Looser: " + playerSelf.name}
+								message={message}
 								onConfirm={() => this._triggerEvent("setRoute", "game")}
 							/>
 						);
@@ -116,6 +140,10 @@ export class RootPanel extends React.Component<Props, State> {
 		);
 	}
 
+	private _onKeywordGuessChange(value: string) {
+		this.setState({keywordGuess: value});
+	}
+
 	private _onItemClicked(item: string) {
 		console.log(item);
 		switch(item) {
@@ -125,6 +153,10 @@ export class RootPanel extends React.Component<Props, State> {
 			}
 			case "share-all": {
 				this._triggerEvent("shareAll", null);
+				break;
+			}
+			case "make-guess": {
+				this._triggerEvent("setRoute", "makeGuess");
 				break;
 			}
 		}

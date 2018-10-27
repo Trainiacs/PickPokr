@@ -7,14 +7,10 @@ export interface Backend<I, O> {
 }
 
 type InputEvents = {
-	answer: {
-		word: string;
-	};
+	guess: string;
 	leave: {};
 	exchangePinRequest: {};
-	exchangeCommit: {
-		pin: string;
-	}
+	exchangeCommit: string;
 }
 
 type OutputEvents = {
@@ -26,13 +22,18 @@ type OutputEvents = {
 	};
 	exchangePin: string;
 	roaster: string[];
-	challange: {
+	challenge: {
 		index?: number;
 		answerLength: number;
 		question?: string;
 	}[];
 	winner: {
 		nick: string;
+		keyword: string;
+	};
+	badGuess: {
+		nick: string;
+		keyword: string;
 	};
 };
 
@@ -71,7 +72,7 @@ export class MockBackend implements EventBackend {
 			this._triggerMessage({type: "roaster", payload: this._players});
 		}, 500);
 		setTimeout(() => {
-			this._triggerMessage({type: "challange", payload: this._words});
+			this._triggerMessage({type: "challenge", payload: this._words});
 		}, 2000)
 	}
 

@@ -9,7 +9,7 @@ import {
 	GamePlayer,
 } from "./";
 
-type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers";
+type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers" | "info" | "winner" | "looser";
 
 export class Application {
 	private _state: ApplicationState;
@@ -26,8 +26,10 @@ export class Application {
 		this._backend = backend;
 		this._backend.listen("error", (a: any) => console.log(a));
 		this._backend.listen("roaster", this._onRosterEvent.bind(this));
-		this._backend.listen("challange", this._onChallangeEvent.bind(this));
+		this._backend.listen("challenge", this._onChallangeEvent.bind(this));
 		this._backend.listen("exchangePin", this._onExchangePinEvent.bind(this));
+		this._backend.listen("winner", this._onWinnerEvent.bind(this));
+		this._backend.listen("badGuess", this._onBadGuessEvent.bind(this));
 
 		this._lobbyManager = new LobbyManager();
 		this._gameManager = new GameManager();
@@ -49,6 +51,15 @@ export class Application {
 		this._backend.connect(nick);
 	}
 
+	private _onWinnerEvent(ev: {type: "winner", payload: {nick: string, keyword: string}}) {
+		this._message = "The winner is " + ev.payload.nick + ". With the word \"" + ev.payload.keyword + "\"";
+		this._setState(ev.payload.nick === this._playerSelf.name ? "winner" : "looser");
+	}
+
+	private _onBadGuessEvent(ev: {type: "winner", payload: {nick: string, keyword: string}}) {
+		this._setInfo("Bad guess \"" + ev.payload.keyword + "\" by " + ev.payload.nick);
+	}
+
 	private _onExchangePinEvent(ev: {type: "exchangePin", payload: string}) {
 		this._exchangePin = ev.payload;
 		if (this._state === "waiting") {
@@ -66,7 +77,7 @@ export class Application {
 		this._render();
 	}
 
-	private _onChallangeEvent(ev: {type: "challange", payload: {answerLength: number, question?: string}[]}) {
+	private _onChallangeEvent(ev: {type: "challenge", payload: {answerLength: number, question?: string}[]}) {
 		let words = GameManager.importWords(ev.payload);
 		this._gameManager.setWords(words);
 		if (this._state === "lobby") {
@@ -81,6 +92,12 @@ export class Application {
 		this._render();
 	}
 
+	private _setInfo(message: string) {
+		this._message = message;
+		this._state = "info";
+		this._render();
+	}
+
 	private _onEvent(event: {type: string, meta: any}) {
 		console.log(event);
 		switch(event.type) {
@@ -91,6 +108,11 @@ export class Application {
 			case "shareAll": {
 				this._setWaiting("Waiting for share PIN");
 				this._backend.send({type: "exchangePinRequest", payload:{}});
+				break;
+			}
+			case "makeGuess": {
+				this._backend.send({type: "guess", payload: event.meta.toLowerCase()});
+				this._setState("game");
 				break;
 			}
 		}
