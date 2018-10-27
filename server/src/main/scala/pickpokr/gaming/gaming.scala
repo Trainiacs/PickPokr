@@ -54,31 +54,39 @@ object Player {
 }
 
 object Game {
+  private val random = new SecureRandom()
 
   case class Question(query: String, answer: String) {
     val length: Int = query.length
   }
 
-  private val questions = List[Question](
-    Question("Är en resenär", "Turist"),
-    Question("Blixt och dunder", "Åska"),
-    Question("Finns i Falun", "Gruva"))
+  private val questions = List[List[Question]](
+    List(
+      Question("Är en resenär", "Turist"),
+      Question("Blixt och dunder", "Åska"),
+      Question("Finns i Falun", "Gruva")),
+    List(
+      Question("Kan bära skägg", "Haka"),
+      Question("Blixt och dunder", "A"),
+      Question("Finns i Falun", "V")),
 
-  def keyword = questions.map(_.answer.head).mkString
+  )
+
+  private def keyword(index:Int) = questions(index).map(_.answer.head).mkString
 
   sealed trait Event
   sealed trait Command
   case class Guess(nick: Nick, guess: String) extends Command
   case class Winner(nick: Nick) extends Command
 
-  def behavior(players: List[Player]): Behavior[Command] =
-    playing(players)
+  def behavior(players: List[Player]): Behavior[Command] = playing(players)
 
   def playing(players: List[Player]): Behavior[Command] = {
     setup { ctx =>
+      val game = random.nextInt(2)
       players.zipWithIndex.foreach {
         case (player, plyerIndex) =>
-          val challenges = questions.zipWithIndex.map {
+          val challenges = questions(game).zipWithIndex.map {
             case (q, questionIndex) ⇒
               val question = if (plyerIndex == questionIndex) Some(q.query) else None
               Player.Challenge(question, q.length)
@@ -86,7 +94,7 @@ object Game {
           player ! Player.JoinGame(plyerIndex, challenges, ctx.self)
       }
       receiveMessage {
-        case Guess(nick, guess) if guess == keyword =>
+        case Guess(nick, guess) if guess == keyword(game) =>
           players foreach (_ ! Player.Winner(nick, guess))
           finished(players, nick, guess)
       }
