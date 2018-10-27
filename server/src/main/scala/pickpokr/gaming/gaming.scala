@@ -1,8 +1,6 @@
 package pickpokr
 package gaming
 
-import java.security.SecureRandom
-
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors._
 import akka.http.scaladsl.model.ws.TextMessage
@@ -63,26 +61,6 @@ object Player {
 }
 
 object Game {
-  private val random = new SecureRandom()
-
-  case class Question(query: String, answer: String) {
-    val length: Int = query.length
-  }
-
-  private val questions = List[List[Question]](
-    List(
-      Question("Är en resenär", "Turist"),
-      Question("Blixt och dunder", "Åska"),
-      Question("Finns i Falun", "Gruva")),
-    List(
-      Question("Kan bära skägg", "Haka"),
-      Question("Blixt och dunder", "A"),
-      Question("Finns i Falun", "V")),
-
-  )
-
-  private def keyword(index:Int) = questions(index).map(_.answer.head).mkString
-
   sealed trait Event
   sealed trait Command
   case class Guess(nick: Nick, guess: String) extends Command
@@ -92,10 +70,10 @@ object Game {
 
   def playing(players: List[Player]): Behavior[Command] = {
     setup { ctx =>
-      val game = random.nextInt(2)
+      val questionSet = QuestionSet(players.size)
       players.zipWithIndex.foreach {
         case (player, plyerIndex) =>
-          val challenges = questions(game).zipWithIndex.map {
+          val challenges = questionSet.questions.zipWithIndex.map {
             case (q, questionIndex) ⇒
               val question = if (plyerIndex == questionIndex) Some(q.query) else None
               Player.Challenge(question, q.length)
@@ -103,7 +81,7 @@ object Game {
           player ! Player.JoinGame(plyerIndex, challenges, ctx.self)
       }
       receiveMessage {
-        case Guess(nick, guess) if guess == keyword(game) =>
+        case Guess(nick, guess) if guess == questionSet.keyword =>
           players foreach (_ ! Player.Winner(nick, guess))
           finished(players, nick, guess)
       }
@@ -166,8 +144,6 @@ object Train extends JsonSupport {
   case class Guess(nick: Nick, value: String) extends Command
   case class RequestExchange(nick: Nick) extends Command
   case class ExchangeCommit(nick: Nick, pin: Pin) extends Command
-
-  private val random = new SecureRandom()
 
   def behavior(players: Map[Nick, Player] = Map.empty, roaster: Roaster = Roaster(), games: List[Game] = Nil, exchanges: Map[Int, Nick] = Map.empty): Behavior[Command] = {
     setup { ctx ⇒
@@ -246,7 +222,433 @@ object Lobby {
   }
 }
 
-object Words {
+case class Question(query: String, answer: String) {
+  val length: Int = query.length
+}
+case class QuestionSet(keyword: String, questions: List[Question])
+object QuestionSet {
+  //private def keyword(index:Int) = questions(index).map(_.answer.head).mkString
+
+  def apply(n: Int): QuestionSet = {
+    val words = wordsByLength(n)
+    val keyword = words(random.nextInt(words.size))
+    val qs = keyword.map(questionsByInitialCharacter).map(_.head).map {
+      case (answer, query) => Question(query, answer)
+    }.toList
+    QuestionSet(keyword, qs)
+  }
+  lazy val wordsByLength = wordsData.
+    split('\n').
+    map(_.trim).
+    filterNot(w => w.exists(_.isDigit) || w.exists(_.isSpaceChar)).
+    toList.
+    distinct.
+    groupBy(_.length)
+  private val questions1 = List[List[Question]](
+    List(
+      Question("Är en resenär", "Turist"),
+      Question("Blixt och dunder", "Åska"),
+      Question("Finns i Falun", "Gruva")),
+    List(
+      Question("Kan bära skägg", "Haka"),
+      Question("Blixt och dunder", "A"),
+      Question("Finns i Falun", "V")),
+
+  )
+  lazy val questionsByInitialCharacter = questionsData.
+    split('\n').
+    map(_.split('=')).
+    map(a => a(1).trim -> a(0).trim).
+    toList.
+    groupBy(_._1.head)
+  val wordsData =
+    """
+      |mod
+      |ära
+      |röra
+      |djup
+      |turné
+      |regissör
+      |pengar
+      |värde
+      |drottning
+      |rött
+      |verktyg
+      |tal
+      |människa
+      |fyra
+      |hälsa
+      |en dag
+      |japan
+      |ton
+      |objekt
+      |låga
+      |roman
+      |roman
+      |låga
+      |natt
+      |serie
+      |offer
+      |natt
+      |inslag
+      |flygplan
+      |identitet
+      |värde
+      |brand
+      |kropp
+      |fyra
+      |liv
+      |stjärna
+      |engelska
+      |fängelse
+      |30
+      |dubbel
+      |utrustning
+      |konflikt
+      |boende
+      |självmord
+      |inriktning
+      |filmografi
+      |januari
+      |rike
+      |medlem
+      |flygbolag
+      |besökare
+      |besökare
+      |ekonomi
+      |dubbel
+      |rike
+      |japanska
+      |verktyg
+      |geografi
+      |besökare
+      |självmord
+      |medlem
+      |verktyg
+      |engelska
+      |januari
+      |regissör
+      |ekonomi
+      |media
+      |dollar
+      |tal
+      |trä
+      |stopp
+      |straff
+      |dator
+      |konstant
+      |25
+      |tillverkning
+      |december
+      |brand
+      |kropp
+      |mjölk
+      |värde
+      |fyra
+      |hälsa
+      |beslut
+      |hälsa
+      |inne i
+      |dom
+      |först
+      |främsta
+      |fängelse
+      |djup
+      |mjölk
+      |stjärna
+      |liv
+      |stjärna
+      |ombord
+      |natt
+      |natt
+      |självmord
+      |identitet
+      |en dag
+      |medlem
+      |cancer
+      |serie
+      |utsträckning
+      |pengar
+      |serie
+      |geografi
+      |besökare
+      |kraft
+      |offer
+      |december
+      |tillverkning
+      |egendom
+      |gud
+      |serie
+      |grå
+      |fängelse
+      |kraft
+      |media
+      |dubbel
+      |trä
+      |värde
+      |drev
+      |grå
+      |ombord
+      |djup
+      |regissör
+      |natt
+      |verktyg
+      |december
+      |stjärna
+      |gud
+      |december
+      |pengar
+      |mod
+      |gud
+      |straff
+      |start
+      |fyra
+      |djup
+      |dator
+      |mod
+      |besökare
+      |hälsa
+      |främsta
+      |ära
+      |intryck
+      |liv
+      |besökare
+      |fall
+      |dator
+      |serie
+      |identitet
+      |saker
+      |djup
+      |mandat
+      |25
+      |flygplan
+      |natt
+      |låga
+      |inne i
+      |gud
+      |beslut
+      |serie
+      |offer
+      |inne i
+      |tal
+      |arkiv
+      |en dag
+      |mod
+      |fängelse
+      |kropp
+      |ära
+      |dubbel
+      |låga
+      |25
+      |pengar
+      |mod
+      |geografi
+      |turné
+      |30
+      |låga
+      |låga
+      |offer
+      |dollar
+      |japan
+      |japanska
+      |beslut
+      |dom
+      |straff
+      |ekonomi
+      |fall
+      |konstant
+      |inslag
+      |hälsa
+      |fall
+      |dollar
+      |mod
+      |beslut
+      |fysiker
+      |serie
+      |japan
+      |pengar
+      |fängelse
+      |drev
+      |beslut
+      |djup
+      |japan
+      |regissör
+      |inne i
+      |serie
+      |främsta
+      |värde
+      |objekt
+      |halva
+      |beslut
+      |dollar
+      |roman
+      |december
+      |klimat
+      |dubbel
+      |januari
+      |ombord
+      |pengar
+      |japanska
+      |turné
+      |dom
+      |media
+      |röra
+      |gud
+      |japan
+      |egendom
+      |skick
+      |stöd
+      |mod
+      |geografi
+      |dans
+      |filmografi
+      |japanska
+      |anhängare
+      |filmografi
+      |trä
+      |webbplats
+      |kropp
+      |intryck
+      |egendom
+      |tillverkning
+      |fängelse
+      |stjärna
+      |dom
+      |ära
+      |mina
+      |beslut
+      |hälsa
+      |stopp
+      |fysiker
+      |japan
+      |lugn
+      |mod
+      |stjärna
+      |kropp
+      |dollar
+      |roman
+      |ombord
+      |egendom
+      |start
+      |beslut
+      |fyra
+      |rike
+      |turné
+      |tillverkning
+      |först
+      |saker
+      |natt
+      |kraft
+      |december
+      |stjärna
+      |flygbolag
+      |liv
+      |cancer
+      |tillverkning
+      |besökare
+      |flygbolag
+      |dubbel
+      |serie
+      |fängelse
+      |mandat
+      |tillverkning
+      |media
+      |drottning
+      |fall
+      |djup
+      |främsta
+      |pengar
+      |intryck
+    """.stripMargin.toLowerCase()
+  val questionsData =
+    """
+      |Highnose=Höganäs
+      |Charlestown=Karlstad
+      |Housemill=Husqvarna
+      |Crown of country=Landskrona
+      |Livelongtime=Borlänge
+      |Crowd=Skara
+      |Pennybridge=Örebro
+      |Healthyvillagemountain=Sundbyberg
+      |Rivergoal=Åmål
+      |Wring the neck of=Nacka
+      |Smallpants=Trosa
+      |Castle of threesmile=Trelleborg
+      |Whatstone=Vadstena
+      |East of healthy=Östersund
+      |Speakagainst=Mottala
+      |Knowland=Vetlanda
+      |Bay of eagleshield=Örnsköldsvik
+      |Newbridge=Nybro
+      |Heresneezedduck=Härnösand
+      |Onebying=Enköping
+      |Castle of friends=Vänersborg
+      |Be=Vara
+      |Growlake=Växsjö
+      |Springyard=Vårgårda
+      |Healthy of oxloose=Oxelösund
+      |Mother of roor=Mora Träsk
+      |Fairtown=Fagersta
+      |Mountain of atewide=Åtvidaberg
+      |Yes=Hjo
+      |Islet of angel=Ängelholm
+      |Manforest=Karlskoga
+      |Noselake=Nässjö
+      |Wolfisland=Vargön
+      |Islet of animals=Djursholm
+      |Wheremountain=Varberg
+      |Olympic village=Osby
+      |Buy a harbour=Köpenhamn
+      |Cabbage Creek=Kålbäck
+      |Nobay=Kivik
+      |ElevatorNobody=Hisingen
+      |Christine Harbour=Kristinehamn
+      |Hookif=Krokom
+      |Tightbay=Trångsviken
+      |Did they push=Skövde
+      |King River=Kungälv
+      |Destiny High=Ödeshög
+      |Liveit=Boden
+      |Only=Bara
+      |Hands up river Råneå
+      |Cheesbay=Ostvik
+      |West Ridge=Västerås
+      |Marypeace=Mariefred
+      |Heavy elecric town=Tungelsta
+      |New nose habour=Nynäshamn
+      |Städer omskrivna på svenska
+      |Insektsflicka=Malmö
+      |Flickbyxa=Trosa
+      |Pojkfästning=Göteborg
+      |Spänningsort=Strömstad
+      |Vattenmat=Åmål
+      |Myntspång=Örebro
+      |Klokt samhälle=Visby
+      |Manort=Karlstad
+      |Trädvatten=Eksjö
+      |Folksamling=Skara
+      |Barsk udde=Strängnäs
+      |Fågelhöjd=Tranås
+      |Skogsväsenmössan=Trollhättan
+      |Omfamningsfall=Kramfors
+      |Väderstreckssamhälle=Söderköping
+      |Stråort=Halmstad
+      |Infektionshärdshöjd=Varberg
+      |Trädsamling=Lund
+      |Regentbakåt=Kungsbacka
+      |Växtsamhälle=Ljungby
+      |Kula Udde=Bollnäs
+      |Metallhöjden=Malmberget
+      |Valrossen=Sälen
+      |Rikepeng=Landskrona
+      |Insektsbarn=Malung
+      |Stor böld=Varberg
+      |Ramlar du?=Dalarö
+      |Barnmatsamhälle=Vällingby
+    """.stripMargin.toLowerCase()
+}
+
+object Words2 {
   val all: String =
     """Abroad, Access, Accommodations, Activities, Addition, Adventure, Affordable, Agency, Airfare, Allure, Ambiance, Amenities, Amount, Ample, Amusement, Appetite, Aquatic, Arrangements, Array, Assortment, Atmosphere, Attraction, Availability
       |Backyard, Barbecue, Beach, Bellhop, Beverage, Biking, Boathouse, Boating, Boutique, Break, Budget, Business
