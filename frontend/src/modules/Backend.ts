@@ -7,9 +7,7 @@ export interface Backend<I, O> {
 }
 
 type InputEvents = {
-	answer: {
-		word: string;
-	};
+	guess: string;
 	leave: {};
 	exchangePinRequest: {};
 	exchangeCommit: {

@@ -93,6 +93,11 @@ export class Application {
 				this._backend.send({type: "exchangePinRequest", payload:{}});
 				break;
 			}
+			case "makeGuess": {
+				this._backend.send({type: "guess", payload: event.meta});
+				this._setState("game");
+				break;
+			}
 		}
 		
 	}

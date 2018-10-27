@@ -534,5 +534,9 @@ button {
 		&.show-players:after {
 			content: "\f0c0";
 		}
+
+		&.make-guess:after {
+			content: "\f522";
+		}
 	}
 }
