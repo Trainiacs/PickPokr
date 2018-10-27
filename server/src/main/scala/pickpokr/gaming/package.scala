@@ -1,5 +1,6 @@
 package pickpokr
 
+import java.security.SecureRandom
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.Message
 
@@ -11,4 +12,5 @@ package object gaming {
   type Train = ActorRef[Train.Command]
   type Lobby = ActorRef[Lobby.Command]
   val minGameSize = 2
+  val random = new SecureRandom()
 }
