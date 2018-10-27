@@ -9,7 +9,7 @@ import {
 	GamePlayer,
 } from "./";
 
-type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game";
+type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers";
 
 export class Application {
 	private _state: ApplicationState;
@@ -20,14 +20,19 @@ export class Application {
 	private _message: string;
 	private _playerSelf: GamePlayer;
 
+	private _exchangePin: string;
+
 	constructor(backend: EventBackend) {
 		this._backend = backend;
 		this._backend.listen("error", (a: any) => console.log(a));
 		this._backend.listen("roaster", this._onRosterEvent.bind(this));
 		this._backend.listen("challange", this._onChallangeEvent.bind(this));
+		this._backend.listen("exchangePin", this._onExchangePinEvent.bind(this));
 
 		this._lobbyManager = new LobbyManager();
 		this._gameManager = new GameManager();
+
+		this._exchangePin = "";
 	}
 
 	async init() {
@@ -42,6 +47,14 @@ export class Application {
 			ready: true,
 		};
 		this._backend.connect(nick);
+	}
+
+	private _onExchangePinEvent(ev: {type: "exchangePin", payload: string}) {
+		this._exchangePin = ev.payload;
+		if (this._state === "waiting") {
+			this._state = "showPin";
+		}
+		this._render();
 	}
 
 	private _onRosterEvent(ev: {type: "roaster", payload: string[]}) {
@@ -68,8 +81,25 @@ export class Application {
 		this._render();
 	}
 
+	private _onEvent(event: {type: string, meta: any}) {
+		console.log(event);
+		switch(event.type) {
+			case "setRoute": {
+				this._setState(event.meta);
+				break;
+			}
+			case "shareAll": {
+				this._setWaiting("Waiting for share PIN");
+				this._backend.send({type: "exchangePinRequest", payload:{}});
+				break;
+			}
+		}
+		
+	}
+
 	private _setState(state: ApplicationState) {
 		this._state = state;
+		console.log(this._state);
 		this._render();
 	}
 
@@ -86,6 +116,8 @@ export class Application {
 				gameManager: this._gameManager,
 				lobbyManager: this._lobbyManager,
 				playerSelf: this._playerSelf,
+				exchangePin: this._exchangePin,
+				onEvent: this._onEvent.bind(this),
 			}),
 			document.getElementById("root")
 		);

@@ -24,9 +24,7 @@ type OutputEvents = {
 	denied: {
 		message: string;
 	};
-	exchangePin: {
-		pin: string;
-	};
+	exchangePin: string;
 	roaster: string[];
 	challange: {
 		index?: number;
@@ -81,7 +79,7 @@ export class MockBackend implements EventBackend {
 		switch(message.type) {
 			case "exchangePinRequest": {
 				setTimeout(() => {
-					this._triggerMessage({type: "exchangePin", payload: {pin: "1234"}});
+					this._triggerMessage({type: "exchangePin", payload: "1234"});
 				}, 500);
 			}
 		}

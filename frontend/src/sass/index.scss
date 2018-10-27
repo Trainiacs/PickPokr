@@ -30,7 +30,7 @@ body {
 }
 
 .panel {
-	width: 100vw;
+	width: 100%;
 }
 
 @keyframes anim-scale-in {
@@ -79,6 +79,35 @@ body {
 	100% {
 		left: 200%;
 	}
+}
+
+input {
+	display: block;
+	width: 100%;
+	border: none;
+	border-radius: $theme-soft-size;
+	text-align: center;
+	font-family: $theme-font;
+	font-size: 25px;
+	padding: $theme-margin;
+}
+
+button {
+	display: block;
+	width: 100%;
+	border: none;
+	border-radius: $theme-soft-size;
+	padding: $theme-margin;
+	margin-top: $theme-margin;
+	text-decoration: none;
+	background: $theme-primary-background;
+	color: $theme-primary-color;
+	font-family: $theme-font;
+	font-size: 25px;
+	cursor: pointer;
+	text-align: center;
+	-webkit-appearance: none;
+	-moz-appearance: none;
 }
 
 .game-panel {
@@ -213,35 +242,6 @@ body {
 		margin: auto;
 		margin-top: $theme-margin;
 		padding: $theme-margin;
-
-		input {
-			display: block;
-			width: 100%;
-			border: none;
-			border-radius: $theme-soft-size;
-			text-align: center;
-			font-family: $theme-font;
-			font-size: 25px;
-			padding: $theme-margin;
-		}
-
-		button {
-			display: block;
-			width: 100%;
-			border: none;
-			border-radius: $theme-soft-size;
-			padding: $theme-margin;
-			margin-top: $theme-margin;
-			text-decoration: none;
-			background: $theme-primary-background;
-			color: $theme-primary-color;
-			font-family: $theme-font;
-			font-size: 25px;
-			cursor: pointer;
-			text-align: center;
-			-webkit-appearance: none;
-			-moz-appearance: none;
-		}
 	}
 }
 
@@ -320,6 +320,10 @@ body {
 		color: $theme-block-color;
 		min-height: calc(100vh - #{$theme-picture-size});
 
+		button {
+			max-width: $theme-max-read-width;
+			margin: auto;
+		}
 		.player {
 			max-width: $theme-max-read-width;
 			margin: auto;
@@ -391,17 +395,17 @@ body {
 	}
 }
 
-.waiting-panel {
+.info-panel {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 
-	min-width: 100vw;
+	min-width: 100%;
 	min-height: 100vh;
 	background: $theme-block-background;
 	color: $theme-block-color;
 
-	& > .waiting {
+	& > .info {
 		&:before {
 			display: block;
 			border-radius: 50%;
@@ -410,9 +414,73 @@ body {
 			content: "\f017";
 			font-family: 'Font Awesome 5 Free';
 			font-size: $theme-click-size * 3;
+			line-height: $theme-click-size * 3;
+			text-align: center;
 			background: $theme-block-color;
 			color: $theme-block-background;
 			margin-bottom: $theme-margin;
+		}
+
+		& > .message {
+			text-align: center;
+		}
+	}
+
+	& > .info.waiting:before {
+		content: "\f017";
+	}
+
+	& > .info.message:before {
+		content: "\f05a";
+	}
+
+	& > .info.pin:before {
+		content: "\f2b5";
+		font-size: $theme-click-size * 2;
+		font-family: 'Font Awesome 5 Free Solid';
+	}
+}
+
+.top-bar-panel {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background: $theme-primary-background;
+	overflow: hidden;
+
+	& > .item {
+		position: relative;
+		display: block;
+		width: $theme-click-size;
+		height: $theme-click-size;
+		float: right;
+		color: $theme-primary-color;
+
+		&:after {
+			position: absolute;
+			content: "";
+			display: block;
+			border-radius: 50%;
+			border: solid 2px $theme-primary-color;
+			top: 5px;
+			left: 5px;
+			bottom: 5px;
+			right: 5px;
+
+			font-size: 20px;
+			text-align: center;
+			line-height: $theme-click-size - 10px;
+			font-family: 'Font Awesome 5 Free Solid';
+		}
+
+		&.share-all:after {
+			content: "\f2b5";
+		}
+
+		&.show-players:after {
+			content: "\f0c0";
 		}
 	}
 }

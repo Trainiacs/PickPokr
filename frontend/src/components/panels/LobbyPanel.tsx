@@ -5,7 +5,8 @@ import {GamePlayer} from "../../modules";
 interface Props {
 	playerList: GamePlayer[];
 	playerSelf: GamePlayer;
-	onReadyStateChanged(ready: boolean): void;
+	onReadyStateChanged?: (ready: boolean) => void;
+	onClose?: () => void;
 }
 
 interface State {
@@ -16,6 +17,7 @@ export class LobbyPanel extends React.Component<Props, State> {
 	public render() {
 		let playerList: GamePlayer[] = this.props.playerList.sort((a, b) => (a.ready ? 0 : 1) - (b.ready ? 0 : 1));
 		let playerSelf: GamePlayer = this.props.playerSelf;
+		let onClose = this.props.onClose;
 		return (
 			<div className="lobby-panel panel">
 				<div className="player-self">
@@ -29,6 +31,9 @@ export class LobbyPanel extends React.Component<Props, State> {
 							<div className={"status" + (player.ready ? " ready": " waiting")} />
 						</div>
 					))}
+					{onClose ? (
+						<button onClick={onClose}>Back to game</button>
+					) : (null)}
 				</div>
 			</div>
 		);
@@ -36,6 +41,6 @@ export class LobbyPanel extends React.Component<Props, State> {
 
 	private _onReadyStateChanged(ready: boolean) {
 		console.log("Ready state: ", ready);
-		this.props.onReadyStateChanged(ready);
+		if (this.props.onReadyStateChanged) this.props.onReadyStateChanged(ready);
 	}
 }
