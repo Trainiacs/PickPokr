@@ -15,31 +15,35 @@ import scala.annotation.tailrec
 
 case class Nick(literal: String)
 case class Pin(value: Int)
+case class Keyword(literal: String) {
+  val length: Int = literal.length
+}
 
 object Player {
   sealed trait Event
   case class RoasterUpdated(roaster: Train.Roaster) extends Event
   sealed trait Command
   case class UpdateRoaster(roaster: Train.Roaster) extends Command
-  case class JoinGame(index: Int, question: Question, game: Game) extends Command
+  case class JoinGame(index: Int, question: List[Challenge], game: Game, keyword: Keyword) extends Command
   case class Guess(literal: String) extends Command
   case class Winner(nick: Nick) extends Command
   case class Pin(value: Int) extends Command
   case class ExchangeCommit(nick: Nick) extends Command
+  case class Challenge(query: Option[String], length: Int)
 
   def waiting(client: WSClient, nick: Nick): Behavior[Command] = {
     receiveMessagePartial {
-      case JoinGame(index, question, game) =>
-        client ! Client.Challenge(List(Some(question) → answer.length)).toTextMessage
-        playing(client, nick, game, answer)
+      case JoinGame(index, challenges, game, keyword) =>
+        client ! Client.Challenge(challenges).toTextMessage
+        playing(client, nick, game, index, answer)
     }
   }
-  def playing(client: WSClient, nick: Nick, game: Game, answer: String, challenges: Array[Challenge]): Behavior[Command] = {
+  def playing(client: WSClient, nick: Nick, game: Game, index: Int, keyword: String, challenges: Array[Challenge]): Behavior[Command] = {
     receiveMessage {
       case UpdateRoaster(roaster) =>
         client ! Client.Roaster(roaster.nicks).toTextMessage
         same
-      case guess: Guess if guess.literal == answer =>
+      case guess: Guess if guess.literal == answer => // Todo send
         game ! Game.Winner(nick)
         same
       case Winner(winner) ⇒
