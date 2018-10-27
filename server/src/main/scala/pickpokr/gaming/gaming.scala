@@ -19,6 +19,7 @@ object Player {
   case class UpdateRoaster(roaster: Train.Roaster) extends Command
   case class JoinGame(index: Int, question: List[Challenge], game: Game) extends Command
   case class Guess(literal: String) extends Command
+  case class BadGuess(nick:Nick, guess: String) extends Command
   case class Winner(nick: Nick, keyword: String) extends Command
   case class Pin(value: Int) extends Command
   case class ExchangeCommit(player: Player) extends Command
@@ -27,6 +28,9 @@ object Player {
 
   def waiting(client: WSClient, nick: Nick): Behavior[Command] = {
     receiveMessagePartial {
+      case UpdateRoaster(roaster) =>
+        client ! Client.Roaster(roaster.nicks).toTextMessage
+        same
       case JoinGame(index, challenges, game) =>
         client ! Client.Challenge(challenges.map(c ⇒ (c.query, c.length))).toTextMessage
         playing(client, nick, game, index, challenges)
@@ -49,6 +53,9 @@ object Player {
         playing(client, nick, game, index, uc)
       case Guess(guess) =>
         game ! Game.Guess(nick, guess)
+        same
+      case BadGuess(nick, guess) ⇒
+        client ! Client.BadGuess(nick, guess).toTextMessage
         same
       case Winner(winner, keyword) ⇒
         client ! Client.Winner(winner, keyword).toTextMessage
@@ -84,6 +91,9 @@ object Game {
         case Guess(nick, guess) if guess == questionSet.keyword =>
           players foreach (_ ! Player.Winner(nick, guess))
           finished(players, nick, guess)
+        case Guess(nick, guess) ⇒ 
+          players foreach (_ ! Player.BadGuess(nick, guess))
+          same
       }
     }
   }
@@ -115,8 +125,10 @@ object Client {
             case (None, l) ⇒ s"""{"answerLength": $l}"""
           }.mkString("[", ", ", "]")
           s"""{"type":"challenge", "payload":$qal}"""
-        case Winner(nick, answer) ⇒
-          s"""{"type":"outcome", "payload":{"nick": $nick, "answer": "$answer"}"""
+        case Winner(nick, keyword) ⇒
+          s"""{"type":"winner", "payload":{"nick": $nick, "keyword": "$keyword"}"""
+        case BadGuess(nick, guess) ⇒
+          s"""{"type":"badGuess", "payload":{"nick": $nick, "guess": "$guess"}"""
       }
       println(s"to client -> $json")
       TextMessage(json)
@@ -127,6 +139,7 @@ object Client {
   case class Pin(value: Int) extends Message
   case class Challenge(qas: List[(Option[String], Int)]) extends Message
   case class Winner(nick: Nick, keyword: String) extends Message
+  case class BadGuess(nick: Nick, guess: String) extends Message
 }
 
 object Train extends JsonSupport {
@@ -140,6 +153,7 @@ object Train extends JsonSupport {
 
   sealed trait Command
   case class ClientConnected(nick: Nick, client: WSClient) extends Command
+  case object StartGame extends Command
   private case object CheckRoaster extends Command
   case class Guess(nick: Nick, value: String) extends Command
   case class RequestExchange(nick: Nick) extends Command
@@ -158,10 +172,10 @@ object Train extends JsonSupport {
             val updatedRoaster = roaster.copy(nicks = nick :: roaster.nicks)
             client ! Client.Roaster(updatedRoaster.nicks).toTextMessage
             up.values.foreach(_ ! Player.UpdateRoaster(updatedRoaster))
-            ctx.self ! CheckRoaster
+//            ctx.self ! CheckRoaster
             behavior(up, updatedRoaster, games)
           }
-        case CheckRoaster if roaster.nicks.size > minGameSize =>
+        case StartGame if roaster.nicks.size > minGameSize =>
           val gamePlayers = roaster.nicks.flatMap(players.get)
           val game = ctx.spawn(Game.behavior(gamePlayers), s"game-${games.size + 1}")
           behavior(players, Roaster(), game :: games)
@@ -200,6 +214,7 @@ object Lobby {
   case class Guess(train: Train.Id, nick: Nick, guess: String) extends Command
   case class RequestExchange(trainId: Int, nick: Nick) extends Command
   case class ExchangeCommit(trainId: Int, nick: Nick, pin: Pin) extends Command
+  case class StartGame(trainId:Int) extends Command
 
   def behavior(trains: Map[Train.Id, Train] = Map.empty, clients: List[WSClient] = Nil): Behavior[Command] = {
     setup { ctx ⇒
@@ -208,6 +223,9 @@ object Lobby {
           val train = trains.getOrElse(trainId, ctx.spawn(Train.behavior(), s"train-$trainId"))
           train ! Train.ClientConnected(nick, client)
           behavior(trains.updated(trainId, train), client :: clients)
+        case StartGame(trainId) ⇒
+          trains(trainId) ! Train.StartGame
+          same
         case Guess(trainId, nick, guess) ⇒
           trains(trainId) ! Train.Guess(nick, guess)
           same
@@ -230,7 +248,7 @@ object QuestionSet {
   //private def keyword(index:Int) = questions(index).map(_.answer.head).mkString
 
   def apply(n: Int): QuestionSet = {
-    val words = wordsByLength(n).filterNot(w => w.exists("cijpuwxyz".contains))
+    val words = wordsByLength(n).filterNot(w => w.exists(c ⇒ "cijpuwxyz".contains(c)))
     val keyword = words(random.nextInt(words.size))
     println(s"words = ${words.mkString("[", ", ", "]")}, keyword = $keyword")
     val qs = keyword.toUpperCase.map(questionsByInitialCharacter).map(_.head).map {

@@ -24,4 +24,4 @@ async function _startApplication(socketHost: string, systemDataPath: string) {
 	application.init();
 }
 
-_startApplication("ws://192.168.10.23:8080/ws/", "http://icomera.trainhack.com/api/jsonp/system/");
+_startApplication("ws://192.168.10.23:8080/ws/", "http://www.google.com");

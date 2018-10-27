@@ -21,6 +21,7 @@ object HttpServer extends App with JsonSupport with Directives {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
   val lobby: ActorRef[Lobby.Command] = system.spawn(Lobby.behavior(), "lobby")
+  val bufferSize = 100
 
   lazy val routes: Route = {
     pathPrefix("ws") {
@@ -55,13 +56,15 @@ object HttpServer extends App with JsonSupport with Directives {
               Lobby.RequestExchange(trainId, nick)
             case ("exchangeCommit", js) ⇒
               Lobby ExchangeCommit (trainId, nick, Pin(js.num.toInt))
+            case ("startGame", js) ⇒
+              Lobby.StartGame(trainId)
           }.
           to(lobbySink(trainId, nick))
 
         val out = ActorSource.actorRef[Message](
           { case msg if false => println(msg.toString) }, // Todo complete
           { case msg if false => new RuntimeException(s"bad:$msg") },
-          1,
+          bufferSize,
           OverflowStrategy.fail).
           mapMaterializedValue { clientRef =>
             lobby ! Lobby.ClientConnected(trainId, nick, clientRef)
