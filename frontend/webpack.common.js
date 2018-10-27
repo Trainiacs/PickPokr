@@ -4,7 +4,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
 	buildConfig: function(mode, distPath) {
 		let development = mode === "development";
-		let reactMode = development ? "development" : "production";
+		let reactMode = development ? "development" : "production.min";
 		let watch = development;
 		let devtool = development ? "source-map" : undefined; 
 		return({
