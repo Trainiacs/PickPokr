@@ -10,9 +10,7 @@ type InputEvents = {
 	guess: string;
 	leave: {};
 	exchangePinRequest: {};
-	exchangeCommit: {
-		pin: string;
-	}
+	exchangeCommit: string;
 }
 
 type OutputEvents = {
@@ -31,6 +29,11 @@ type OutputEvents = {
 	}[];
 	winner: {
 		nick: string;
+		keyword: string;
+	};
+	badGuess: {
+		nick: string;
+		keyword: string;
 	};
 };
 

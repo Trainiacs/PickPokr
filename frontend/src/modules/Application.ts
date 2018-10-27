@@ -9,7 +9,7 @@ import {
 	GamePlayer,
 } from "./";
 
-type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers" | "info";
+type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers" | "info" | "winner" | "looser";
 
 export class Application {
 	private _state: ApplicationState;
@@ -28,6 +28,8 @@ export class Application {
 		this._backend.listen("roaster", this._onRosterEvent.bind(this));
 		this._backend.listen("challenge", this._onChallangeEvent.bind(this));
 		this._backend.listen("exchangePin", this._onExchangePinEvent.bind(this));
+		this._backend.listen("winner", this._onWinnerEvent.bind(this));
+		this._backend.listen("badGuess", this._onBadGuessEvent.bind(this));
 
 		this._lobbyManager = new LobbyManager();
 		this._gameManager = new GameManager();
@@ -47,6 +49,14 @@ export class Application {
 			ready: true,
 		};
 		this._backend.connect(nick);
+	}
+
+	private _onWinnerEvent(ev: {type: "winner", payload: {nick: string, keyword: string}}) {
+		this._setState(ev.payload.nick === this._playerSelf.name ? "winner" : "looser");
+	}
+
+	private _onBadGuessEvent(ev: {type: "winner", payload: {nick: string, keyword: string}}) {
+		this._setInfo("Bad guess \"" + ev.payload.keyword + "\" by " + ev.payload.nick);
 	}
 
 	private _onExchangePinEvent(ev: {type: "exchangePin", payload: string}) {
