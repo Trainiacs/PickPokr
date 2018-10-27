@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.{ Directives, Route }
 import akka.stream.scaladsl.Flow
 import akka.stream.typed.scaladsl.{ ActorSink, ActorSource }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
-import pickpokr.gaming.{ Lobby, Nick }
+import pickpokr.gaming.{ Lobby, Nick, Pin }
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContext, Future }
@@ -23,11 +23,14 @@ object HttpServer extends App with JsonSupport with Directives {
   val lobby: ActorRef[Lobby.Command] = system.spawn(Lobby.behavior(), "lobby")
 
   lazy val routes: Route = {
-    pathPrefix(IntNumber) { trainId =>
-      path(Segment) { nick =>
-        handleWebSocketMessages(webSocketFlow(trainId, Nick(nick)))
+    pathPrefix("ws") {
+      pathPrefix(IntNumber) { trainId =>
+        path(Segment) { nick =>
+          handleWebSocketMessages(webSocketFlow(trainId, Nick(nick)))
+        }
       }
-    }
+    } ~
+      getFromDirectory("../www")
   }
 
   def lobbySink(trainId: Int, nick: Nick) =
@@ -51,7 +54,7 @@ object HttpServer extends App with JsonSupport with Directives {
             case ("requestExchange", js) ⇒
               Lobby.RequestExchange(trainId, nick)
             case ("exchangeCommit", js) ⇒
-              Lobby ExchangeCommit (trainId, nick, js.num.toInt)
+              Lobby ExchangeCommit (trainId, nick, Pin(js.num.toInt))
           }.
           to(lobbySink(trainId, nick))
 
