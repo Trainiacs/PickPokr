@@ -40,7 +40,7 @@ export class RootPanel extends React.Component<Props, State> {
 		let exchangePin = this.props.exchangePin;
 
 		let playerList = this.props.lobbyManager.players;
-		let playerSelf = this.props.playerSelf;
+		let playerSelf = this.props.playerSelf || {name: "U da man", ready: true};
 		let route = this.props.route;
 		let message = this.props.message;
 
@@ -89,6 +89,20 @@ export class RootPanel extends React.Component<Props, State> {
 							<InfoPanel
 								type="pin"
 								message={"PIN: " + exchangePin}
+								onConfirm={() => this._triggerEvent("setRoute", "game")}
+							/>
+						);
+						case "winner": return (
+							<InfoPanel
+								type="winner"
+								message={"Winner: " + playerSelf.name}
+								onConfirm={() => this._triggerEvent("setRoute", "game")}
+							/>
+						);
+						case "looser": return (
+							<InfoPanel
+								type="looser"
+								message={"Looser: " + playerSelf.name}
 								onConfirm={() => this._triggerEvent("setRoute", "game")}
 							/>
 						);
