@@ -13,9 +13,6 @@ import scala.annotation.tailrec
 
 case class Nick(literal: String)
 case class Pin(value: Int)
-case class Keyword(literal: String) {
-  val length: Int = literal.length
-}
 
 object Player {
   sealed trait Event
@@ -24,7 +21,7 @@ object Player {
   case class UpdateRoaster(roaster: Train.Roaster) extends Command
   case class JoinGame(index: Int, question: List[Challenge], game: Game) extends Command
   case class Guess(literal: String) extends Command
-  case class Winner(nick: Nick) extends Command
+  case class Winner(nick: Nick, keyword: String) extends Command
   case class Pin(value: Int) extends Command
   case class ExchangeCommit(nick: Nick) extends Command
   case class Challenge(query: Option[String], length: Int)
@@ -33,25 +30,25 @@ object Player {
     receiveMessagePartial {
       case JoinGame(index, challenges, game) =>
         client ! Client.Challenge(challenges.map(c ⇒ (c.query, c.length))).toTextMessage
-        playing(client, nick, game, index, answer)
+        playing(client, nick, game, index, challenges)
     }
   }
-  def playing(client: WSClient, nick: Nick, game: Game, index: Int, keyword: String, challenges: Array[Challenge]): Behavior[Command] = {
+  def playing(client: WSClient, nick: Nick, game: Game, index: Int, challenges: List[Challenge]): Behavior[Command] = {
     receiveMessage {
       case UpdateRoaster(roaster) =>
         client ! Client.Roaster(roaster.nicks).toTextMessage
         same
-      case guess: Guess if guess.literal == answer => // Todo send
-        game ! Game.Winner(nick)
-        same
-      case Winner(winner) ⇒
-        client ! Client.Outcome(winner, answer).toTextMessage
-        same // Todo end game
       case Pin(pin) ⇒
         client ! Client.Pin(pin).toTextMessage
         same
-      case ExchangeCommit(nick) ⇒
+      case ExchangeCommit(otherNick) ⇒
         same
+      case Guess(guess) =>
+        game ! Game.Guess(nick, guess)
+        same
+      case Winner(winner, keyword) ⇒
+        client ! Client.Winner(winner, keyword).toTextMessage
+        same // Todo end game
     }
   }
 }
@@ -67,11 +64,17 @@ object Game {
     Question("Blixt och dunder", "Åska"),
     Question("Finns i Falun", "Gruva"))
 
+  def keyword = questions.map(_.answer.head).mkString
+
   sealed trait Event
   sealed trait Command
+  case class Guess(nick: Nick, guess: String) extends Command
   case class Winner(nick: Nick) extends Command
 
-  def behavior(players: List[Player]): Behavior[Command] = {
+  def behavior(players: List[Player]): Behavior[Command] =
+    playing(players)
+
+  def playing(players: List[Player]): Behavior[Command] = {
     setup { ctx =>
       players.zipWithIndex.foreach {
         case (player, plyerIndex) =>
@@ -83,10 +86,17 @@ object Game {
           player ! Player.JoinGame(plyerIndex, challenges, ctx.self)
       }
       receiveMessage {
-        case Winner(winner) =>
-          players foreach (_ ! Player.Winner(winner))
-          same
+        case Guess(nick, guess) if guess == keyword =>
+          players foreach (_ ! Player.Winner(nick, guess))
+          finished(players, nick, guess)
       }
+    }
+  }
+  def finished(players: List[Player], winner: Nick, keyword: String): Behavior[Command] = {
+    receiveMessage {
+      case Guess(_, _) =>
+        players foreach (_ ! Player.Winner(winner, keyword))
+        same
     }
   }
 }
@@ -110,7 +120,7 @@ object Client {
             case (None, l) ⇒ s"""{"answerLength": $l}"""
           }.mkString("[", ", ", "]")
           s"""{"type":"challenge", "payload":$qal}"""
-        case Outcome(nick, answer) ⇒
+        case Winner(nick, answer) ⇒
           s"""{"type":"outcome", "payload":{"nick": $nick, "answer": "$answer"}"""
       }
       println(s"to client -> $json")
@@ -121,12 +131,12 @@ object Client {
   case class Roaster(nicks: List[Nick]) extends Message
   case class Pin(value: Int) extends Message
   case class Challenge(qas: List[(Option[String], Int)]) extends Message
-  case class Outcome(nick: Nick, answer: String) extends Message
+  case class Winner(nick: Nick, keyword: String) extends Message
 }
 
 object Train extends JsonSupport {
   type Id = Long
-  case class Pin(value: Int) extends AnyVal
+
   case class Roaster(nicks: List[Nick] = Nil)
 
   sealed trait Event

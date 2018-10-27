@@ -15,5 +15,5 @@ trait JsonSupport extends SprayJsonSupport {
   implicit val deniedJsonFormat: JsonFormat[Client.Denied] = jsonFormat1(Client.Denied)
   implicit val updateRoasterJsonFormat: JsonFormat[Client.Roaster] = jsonFormat1(Client.Roaster)
   implicit val pinJsonFormat: JsonFormat[Client.Pin] = jsonFormat1(Client.Pin)
-  implicit val outcomeJsonFormat: JsonFormat[Client.Outcome] = jsonFormat2(Client.Outcome)
+  implicit val outcomeJsonFormat: JsonFormat[Client.Winner] = jsonFormat2(Client.Winner)
 }
