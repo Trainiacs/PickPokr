@@ -126,9 +126,9 @@ object Client {
           }.mkString("[", ", ", "]")
           s"""{"type":"challenge", "payload":$qal}"""
         case Winner(nick, keyword) ⇒
-          s"""{"type":"winner", "payload":{"nick": $nick, "keyword": "$keyword"}"""
+          s"""{"type":"winner", "payload":{"nick": "${nick.literal}", "keyword": "$keyword"}}"""
         case BadGuess(nick, guess) ⇒
-          s"""{"type":"badGuess", "payload":{"nick": $nick, "guess": "$guess"}"""
+          s"""{"type":"badGuess", "payload":{"nick": "${nick.literal}", "guess": "$guess"}}"""
       }
       println(s"to client -> $json")
       TextMessage(json)
