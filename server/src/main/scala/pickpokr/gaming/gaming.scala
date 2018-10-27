@@ -6,8 +6,6 @@ import java.security.SecureRandom
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors._
 import akka.http.scaladsl.model.ws.TextMessage
-import pickpokr.gaming.Client.Challenge
-import pickpokr.gaming.Game.Question
 import pickpokr.gaming.http.JsonSupport
 import spray.json.JsValue
 
@@ -24,7 +22,7 @@ object Player {
   case class RoasterUpdated(roaster: Train.Roaster) extends Event
   sealed trait Command
   case class UpdateRoaster(roaster: Train.Roaster) extends Command
-  case class JoinGame(index: Int, question: List[Challenge], game: Game, keyword: Keyword) extends Command
+  case class JoinGame(index: Int, question: List[Challenge], game: Game) extends Command
   case class Guess(literal: String) extends Command
   case class Winner(nick: Nick) extends Command
   case class Pin(value: Int) extends Command
@@ -33,8 +31,8 @@ object Player {
 
   def waiting(client: WSClient, nick: Nick): Behavior[Command] = {
     receiveMessagePartial {
-      case JoinGame(index, challenges, game, keyword) =>
-        client ! Client.Challenge(challenges).toTextMessage
+      case JoinGame(index, challenges, game) =>
+        client ! Client.Challenge(challenges.map(c ⇒ (c.query, c.length))).toTextMessage
         playing(client, nick, game, index, answer)
     }
   }
@@ -60,9 +58,11 @@ object Player {
 
 object Game {
 
-  case class Question(query: String, answer: String)
+  case class Question(query: String, answer: String) {
+    val length: Int = query.length
+  }
 
-  val questions = List[Question](
+  private val questions = List[Question](
     Question("Är en resenär", "Turist"),
     Question("Blixt och dunder", "Åska"),
     Question("Finns i Falun", "Gruva"))
@@ -73,9 +73,14 @@ object Game {
 
   def behavior(players: List[Player]): Behavior[Command] = {
     setup { ctx =>
-      players.zip(questions).zipWithIndex.foreach {
-        case ((player, (question, answer)), i) =>
-          player ! Player.JoinGame(i, question, answer, ctx.self)
+      players.zipWithIndex.foreach {
+        case (player, plyerIndex) =>
+          val challenges = questions.zipWithIndex.map {
+            case (q, questionIndex) ⇒
+              val question = if (plyerIndex == questionIndex) Some(q.query) else None
+              Player.Challenge(question, q.length)
+          }
+          player ! Player.JoinGame(plyerIndex, challenges, ctx.self)
       }
       receiveMessage {
         case Winner(winner) =>
