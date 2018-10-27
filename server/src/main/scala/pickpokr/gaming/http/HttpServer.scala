@@ -5,16 +5,16 @@ import akka.actor.ActorSystem
 import akka.actor.typed.ActorRef
 import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.ws.{ Message, TextMessage }
-import akka.http.scaladsl.server.{ Directives, Route }
+import akka.http.scaladsl.model.ws.{Message, TextMessage}
+import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.scaladsl.Flow
-import akka.stream.typed.scaladsl.{ ActorSink, ActorSource }
-import akka.stream.{ ActorMaterializer, OverflowStrategy }
-import pickpokr.gaming.{ Lobby, Nick, Pin }
-
+import akka.stream.typed.scaladsl.{ActorSink, ActorSource}
+import akka.stream.{ActorMaterializer, OverflowStrategy}
+import pickpokr.gaming.{Lobby, Nick, Pin}
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import scala.util.{ Failure, Success }
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
+import ujson.Js
 
 object HttpServer extends App with JsonSupport with Directives {
   implicit val system: ActorSystem = ActorSystem("pickpokr")
@@ -46,17 +46,17 @@ object HttpServer extends App with JsonSupport with Directives {
         val in = Flow[String].
           map { data =>
             val js = ujson.read(data)
-            val kind = js.obj("type").formatted("%s")
-            (kind, js)
+            val kind = js.obj("type").str
+            (kind, js.obj.get("payload"))
           }.
           collect {
-            case ("guess", js) =>
-              Lobby.Guess(trainId, nick, js.str)
-            case ("requestExchange", js) ⇒
+            case ("guess", Some(Js.Str(guess))) =>
+              Lobby.Guess(trainId, nick, guess)
+            case ("requestExchange", _) ⇒
               Lobby.RequestExchange(trainId, nick)
-            case ("exchangeCommit", js) ⇒
-              Lobby ExchangeCommit (trainId, nick, Pin(js.num.toInt))
-            case ("startGame", js) ⇒
+            case ("exchangeCommit", Some(Js.Num(n))) ⇒
+              Lobby ExchangeCommit (trainId, nick, Pin(n.toInt))
+            case ("startGame", _) ⇒
               Lobby.StartGame(trainId)
           }.
           to(lobbySink(trainId, nick))
