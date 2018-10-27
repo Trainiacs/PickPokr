@@ -19,9 +19,9 @@ async function _startApplication(socketHost: string, systemDataPath: string) {
 		console.log("Loading without system id: ");
 	}
 
-	let backend = new MockBackend(socketHost + (systemId || "1234"));
+	let backend = new WebSocketBackend(socketHost + (systemId || "1234"));
 	let application = new Application(backend);
 	application.init();
 }
 
-_startApplication("ws://10.101.1.92:8080/", "http://icomera.trainhack.com/api/jsonp/system/");
+_startApplication("ws://192.168.10.23:8080/ws/", "http://icomera.trainhack.com/api/jsonp/system/");
