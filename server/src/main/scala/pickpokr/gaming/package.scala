@@ -11,6 +11,7 @@ package object gaming {
   type Game = ActorRef[Game.Command]
   type Train = ActorRef[Train.Command]
   type Lobby = ActorRef[Lobby.Command]
-  val minGameSize = 2
+  val minGameSize = 3
+  val maxGameSize = 12
   val random = new SecureRandom()
 }

@@ -159,7 +159,7 @@ object Train extends JsonSupport {
   case class RequestExchange(nick: Nick) extends Command
   case class ExchangeCommit(nick: Nick, pin: Pin) extends Command
 
-  def behavior(players: Map[Nick, Player] = Map.empty, roaster: Roaster = Roaster(), games: List[Game] = Nil, exchanges: Map[Int, Nick] = Map.empty): Behavior[Command] = {
+  def behavior(players: Map[Nick, Player] = Map.empty, roaster: Roaster = Roaster(), games: List[Game] = Nil, exchanges: Map[Int, Nick] = Map.empty, lastConnectAt:Long = 0): Behavior[Command] = {
     setup { ctx ⇒
       receiveMessagePartial {
         case ClientConnected(nick, client) =>
@@ -172,10 +172,12 @@ object Train extends JsonSupport {
             val updatedRoaster = roaster.copy(nicks = nick :: roaster.nicks)
             client ! Client.Roaster(updatedRoaster.nicks).toTextMessage
             up.values.foreach(_ ! Player.UpdateRoaster(updatedRoaster))
-//            ctx.self ! CheckRoaster
-            behavior(up, updatedRoaster, games)
+            if (up.keySet.size > maxGameSize) ctx.self ! StartGame
+            val now = System.currentTimeMillis()
+            if (now - lastConnectAt > 5*1000L) ctx.self ! StartGame
+            behavior(up, updatedRoaster, games, exchanges, now)
           }
-        case StartGame if roaster.nicks.size > minGameSize =>
+        case StartGame if roaster.nicks.size >= minGameSize =>
           val gamePlayers = roaster.nicks.flatMap(players.get)
           val game = ctx.spawn(Game.behavior(gamePlayers), s"game-${games.size + 1}")
           behavior(players, Roaster(), game :: games)
