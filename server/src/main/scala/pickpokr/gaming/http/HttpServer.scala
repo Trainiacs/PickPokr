@@ -1,29 +1,31 @@
 package pickpokr.gaming.http
 
-import akka.actor.typed.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{Directives, Route}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
-import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.stream.scaladsl.{Flow, Sink}
-import akka.stream.typed.scaladsl.{ActorMaterializer, ActorSink, ActorSource}
-import akka.stream.OverflowStrategy
 import akka.NotUsed
-import pickpokr.gaming.{Client, Lobby, Nick}
-import pickpokr.gaming.Client.{Completed, Failed}
-import ujson.Js
+import akka.actor.ActorSystem
+import akka.actor.typed.ActorRef
+import akka.actor.typed.scaladsl.adapter._
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.ws.{ Message, TextMessage }
+import akka.http.scaladsl.server.{ Directives, Route }
+import akka.stream.scaladsl.Flow
+import akka.stream.typed.scaladsl.{ ActorSink, ActorSource }
+import akka.stream.{ ActorMaterializer, OverflowStrategy }
+import pickpokr.gaming.{ Lobby, Nick }
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 object HttpServer extends App with JsonSupport with Directives {
-  implicit val lobby: ActorSystem[Lobby.Command] = ActorSystem(Lobby.behavior(), "lobby")
+  implicit val system: ActorSystem = ActorSystem("pickpokr")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = lobby.executionContext
+  implicit val executionContext: ExecutionContext = system.dispatcher
+  val lobby: ActorRef[Lobby.Command] = system.spawn(Lobby.behavior(), "lobby")
 
   lazy val routes: Route = {
     pathPrefix(IntNumber) { trainId =>
       path(Segment) { nick =>
-        handleWebSocketMessages(webSocketFlow(trainId, Nick(nick), lobby))
+        handleWebSocketMessages(webSocketFlow(trainId, Nick(nick)))
       }
     }
   }
@@ -31,7 +33,7 @@ object HttpServer extends App with JsonSupport with Directives {
   def lobbySink(trainId: Int, nick: Nick) =
     ActorSink.actorRef[Lobby.Command](lobby, Lobby.Cancel(trainId, nick), _ => Lobby.Cancel(trainId, nick))
 
-  def webSocketFlow(trainId: Int, nick: Nick, system: ActorSystem[Lobby.Command]): Flow[Message, Message, NotUsed] = {
+  def webSocketFlow(trainId: Int, nick: Nick): Flow[Message, Message, NotUsed] = {
     Flow[Message].
       collect {
         case TextMessage.Strict(msg) => msg
@@ -48,16 +50,18 @@ object HttpServer extends App with JsonSupport with Directives {
               Lobby.Guess(trainId, nick, js.str)
             case ("requestExchange", js) ⇒
               Lobby.RequestExchange(trainId, nick)
+            case ("exchangeCommit", js) ⇒
+              Lobby ExchangeCommit (trainId, nick, js.num.toInt)
           }.
           to(lobbySink(trainId, nick))
 
         val out = ActorSource.actorRef[Message](
-          { case msg => println(msg.toString) }, // Todo complete
-          { case msg => new RuntimeException(s"bad:$msg") },
+          { case msg if false => println(msg.toString) }, // Todo complete
+          { case msg if false => new RuntimeException(s"bad:$msg") },
           1,
-          OverflowStrategy.backpressure).
+          OverflowStrategy.fail).
           mapMaterializedValue { clientRef =>
-            system ! Lobby.ClientConnected(trainId, nick, clientRef)
+            lobby ! Lobby.ClientConnected(trainId, nick, clientRef)
             NotUsed
           }
 
@@ -66,7 +70,7 @@ object HttpServer extends App with JsonSupport with Directives {
   }
 
   val serverBinding: Future[Http.ServerBinding] =
-    Http().bindAndHandle(routes, "localhost", 8080)
+    Http().bindAndHandle(routes, "0.0.0.0", 8080)
 
   serverBinding.onComplete {
     case Success(bound) =>
@@ -74,8 +78,8 @@ object HttpServer extends App with JsonSupport with Directives {
     case Failure(e) =>
       Console.err.println(s"Server could not start!")
       e.printStackTrace()
-      lobby.terminate()
+      system.terminate()
   }
 
-  Await.result(lobby.whenTerminated, Duration.Inf)
+  Await.result(system.whenTerminated, Duration.Inf)
 }
