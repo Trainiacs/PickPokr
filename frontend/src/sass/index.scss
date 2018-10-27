@@ -1,0 +1,486 @@
+@import "./fonts";
+
+$theme-margin: 10px;
+$theme-click-size: 50px;
+$theme-soft-size: 5px;
+$theme-picture-size: 200px;
+
+$theme-primary-background: #990;
+$theme-secondary-background: #fff;
+$theme-block-background: #333;
+
+$theme-primary-color: #fff;
+$theme-secondary-color: #000;
+$theme-block-color: #eee;
+
+$theme-max-read-width: 600px;
+
+$theme-font: Verdana, Geneva, Tahoma, sans-serif;
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	background: #eee;
+	padding: 0;
+	margin: 0;
+	font-family: $theme-font;
+	user-select: none;
+}
+
+.panel {
+	width: 100%;
+}
+
+@keyframes anim-scale-in {
+	0% {
+		transform: scale(0);
+	}
+	90% {
+		transform: scale(1.1);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes anim-sway-start {
+	0% {
+		transform: rotate(0deg);
+	}
+	50% {
+		transform: rotate(-10deg);
+	}
+	100% {
+		transform: rotate(10deg);
+	}
+}
+
+@keyframes anim-sway {
+	0% {
+		transform: rotate(10deg);
+	}
+	50% {
+		transform: rotate(-10deg);
+	}
+	100% {
+		transform: rotate(10deg);
+	}
+}
+
+@keyframes anim-shine {
+	0% {
+		left: -50%;
+	}
+	50% {
+		left: -50%;
+	}
+	100% {
+		left: 200%;
+	}
+}
+
+input {
+	display: block;
+	width: 100%;
+	border: none;
+	border-radius: $theme-soft-size;
+	text-align: center;
+	font-family: $theme-font;
+	font-size: 25px;
+	padding: $theme-margin;
+}
+
+button {
+	display: block;
+	width: 100%;
+	border: none;
+	border-radius: $theme-soft-size;
+	padding: $theme-margin;
+	margin-top: $theme-margin;
+	text-decoration: none;
+	background: $theme-primary-background;
+	color: $theme-primary-color;
+	font-family: $theme-font;
+	font-size: 25px;
+	cursor: pointer;
+	text-align: center;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+}
+
+.game-panel {
+	background: url("img/bg0.jpg");
+	background-size: 100% auto;
+	padding-top: $theme-picture-size;
+
+	.game-container {
+		position: relative;
+		min-height: calc(100vh - #{$theme-picture-size});
+		text-align: center;
+
+		&::after {
+			position: absolute;
+			content: "";
+			display: block;
+			top: $theme-click-size * 1.5 + $theme-margin;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: $theme-block-background;
+			z-index: 0;
+			box-shadow: 0 0 $theme-soft-size $theme-block-color;
+		}
+
+		.word-list {
+			position: relative;
+			display: inline-block;
+			white-space: nowrap;
+			overflow: auto;
+			padding: 0 $theme-margin;
+			z-index: 1;
+			max-width: 100vw;
+
+			.word {
+				display: inline-block;
+
+				margin-left: $theme-margin;
+				margin-right: $theme-margin;
+				vertical-align: text-top;
+
+				.question {
+					animation: anim-scale-in 0.2s ease-in-out;
+					border-radius: 50%;
+					width: $theme-click-size;
+					height: $theme-click-size;
+					text-align: center;
+					line-height: $theme-click-size;
+					background: $theme-secondary-background;
+					color: $theme-primary-background;
+					border: solid 2px $theme-primary-background;
+					transition: border;
+
+					box-shadow: 0px $theme-soft-size $theme-soft-size rgba(0, 0, 0, 0.5);
+					margin-bottom: $theme-margin;
+					font-weight: bold;
+
+
+					&.not-in-collection {
+						border: solid 0px $theme-primary-background;
+						color: $theme-secondary-color;
+					}
+				}
+
+				.char {
+					background: $theme-secondary-background;
+					color: $theme-secondary-color;
+					border-radius: $theme-soft-size;
+					width: $theme-click-size;
+					height: $theme-click-size;
+					text-align: center;
+					line-height: $theme-click-size;
+					overflow: hidden;
+
+					margin-bottom: $theme-margin * 0.5;
+					box-shadow: 0px $theme-soft-size $theme-soft-size rgba(0, 0, 0, 0.5); 
+
+					&.primary {
+						background: $theme-primary-background;
+						color: $theme-primary-color;
+
+						&.complete {
+							position: relative;
+							animation: anim-sway 1s infinite ease-in-out, anim-sway-start 1s ease-in-out;
+							&:after {
+								position: absolute;
+								top: -50%;
+								content: "";
+								display: block;
+								height: 200%;
+								width: 20%;
+								background: white;
+								transform: rotate(30deg);
+								animation: anim-shine 1s infinite ease-in;
+							}
+						}
+					}
+				}
+
+				&.correct {
+					.char:not(.primary) {
+						border: solid 2px $theme-primary-background;
+						color: $theme-primary-background;
+					}
+				}
+			}
+		}
+	}
+}
+
+.answer-panel {
+	.question {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		min-height: $theme-picture-size;
+		max-width: 100vw;
+		background: $theme-block-background;
+		color: $theme-block-color;
+		font-size: 25px;
+		padding: $theme-margin * 2;
+
+		& > .content {
+			text-align: center;
+			max-width: $theme-max-read-width;
+		}
+	}
+
+	.answer {
+		max-width: $theme-max-read-width;
+		margin: auto;
+		margin-top: $theme-margin;
+		padding: $theme-margin;
+	}
+}
+
+.lobby-panel {
+	
+	background: url("img/bg0.jpg");
+	background-size: 100% auto;
+
+	.player-self {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		height: $theme-picture-size;
+		font-size: 40px;
+		color: white;
+		text-shadow: 0 $theme-soft-size*0.5 $theme-soft-size*0.5 rgba(0, 0, 0, 0.6);
+
+		& > .status {
+			position: relative;
+			margin-left: $theme-margin * 3;
+			width: $theme-click-size * 3;
+			height: $theme-click-size * 3;
+			text-align: center;
+			text-shadow: none;
+			border-radius: 50%;
+			overflow: hidden;
+
+			&:before {
+				border-radius: 50%;
+				content: "\f058";
+				font-size: $theme-click-size * 3;
+				font-family: 'Font Awesome 5 Free';
+				line-height: $theme-click-size * 3;
+			}
+
+			&.ready:before {
+				content: "\f058";
+				background: $theme-primary-background;
+				color: $theme-primary-color;
+			}
+
+			&.ready:after {
+				position: absolute;
+				top: -50%;
+				content: "";
+				display: block;
+				height: 200%;
+				width: 20%;
+				background: white;
+				transform: rotate(30deg);
+				animation: anim-shine 1s infinite ease-in;
+			}
+
+			&.waiting:before {
+				content: "\f057";
+				background: $theme-block-color;
+				color: $theme-block-background;
+			}
+
+			&.waiting {
+				animation: anim-scale-in 0.2s ease-in-out, anim-sway 1s infinite ease-in-out, anim-sway-start 1s ease-in-out;
+				animation-delay: 0s, 0.2s, 0.2s;
+			}
+
+			&.ready {
+				animation: anim-scale-in 0.2s ease-in-out;
+				animation-delay: 0s, 0.2s;
+			}
+		}
+	}
+
+	.player-list {
+		padding: $theme-margin;
+		background: $theme-block-background;
+		color: $theme-block-color;
+		min-height: calc(100vh - #{$theme-picture-size});
+
+		button {
+			max-width: $theme-max-read-width;
+			margin: auto;
+		}
+		.player {
+			max-width: $theme-max-read-width;
+			margin: auto;
+			position: relative;
+			border: solid 1px $theme-block-color;
+			border-radius: $theme-soft-size;
+			margin-bottom: $theme-margin;
+			height: $theme-click-size;
+
+			& > .name {
+				padding: 0 $theme-margin;
+				line-height: $theme-click-size;
+
+				&:before {
+					font-family: 'Font Awesome 5 Free';
+					content: "\f007";
+					margin-right: $theme-margin;	
+				}
+			}
+
+			& > .status {
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: $theme-click-size;
+				bottom: 0;
+				overflow: hidden;
+
+				&:before {
+					content: "\f058";
+					border-radius: $theme-soft-size;
+					font-size: 25px;
+					font-family: 'Font Awesome 5 Free';
+					position: absolute;
+					top: $theme-margin * 0.3;
+					bottom: $theme-margin * 0.3;
+					left: $theme-margin * 0.3;
+					right: $theme-margin * 0.3;
+					text-align: center;
+					line-height: $theme-click-size - $theme-margin * 0.6;
+					overflow: hidden;
+				}
+
+				&.ready:after {
+					position: absolute;
+					top: -50%;
+					content: "";
+					display: block;
+					height: 200%;
+					width: 20%;
+					background: white;
+					transform: rotate(30deg);
+					animation: anim-shine 1s infinite ease-in;
+				}
+
+				&.ready:before {
+					content: "\f058";
+					color: $theme-primary-color;
+					background: $theme-primary-background;
+				}
+
+				&.waiting:before {
+					content: "\f017";
+					color: $theme-block-background;
+					background: $theme-block-color;
+				}
+			}
+		}
+	}
+}
+
+.info-panel {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	min-width: 100%;
+	min-height: 100vh;
+	background: $theme-block-background;
+	color: $theme-block-color;
+
+	& > .info {
+		&:before {
+			display: block;
+			border-radius: 50%;
+			width: $theme-click-size * 3;
+			height: $theme-click-size * 3;
+			content: "\f017";
+			font-family: 'Font Awesome 5 Free';
+			font-size: $theme-click-size * 3;
+			line-height: $theme-click-size * 3;
+			text-align: center;
+			background: $theme-block-color;
+			color: $theme-block-background;
+			margin-bottom: $theme-margin;
+		}
+
+		& > .message {
+			text-align: center;
+		}
+	}
+
+	& > .info.waiting:before {
+		content: "\f017";
+	}
+
+	& > .info.message:before {
+		content: "\f05a";
+	}
+
+	& > .info.pin:before {
+		content: "\f2b5";
+		font-size: $theme-click-size * 2;
+		font-family: 'Font Awesome 5 Free Solid';
+	}
+}
+
+.top-bar-panel {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background: $theme-primary-background;
+	overflow: hidden;
+
+	& > .item {
+		position: relative;
+		display: block;
+		width: $theme-click-size;
+		height: $theme-click-size;
+		float: right;
+		color: $theme-primary-color;
+
+		&:after {
+			position: absolute;
+			content: "";
+			display: block;
+			border-radius: 50%;
+			border: solid 2px $theme-primary-color;
+			top: 5px;
+			left: 5px;
+			bottom: 5px;
+			right: 5px;
+
+			font-size: 20px;
+			text-align: center;
+			line-height: $theme-click-size - 10px;
+			font-family: 'Font Awesome 5 Free Solid';
+		}
+
+		&.share-all:after {
+			content: "\f2b5";
+		}
+
+		&.show-players:after {
+			content: "\f0c0";
+		}
+	}
+}
