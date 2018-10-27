@@ -33,7 +33,7 @@ type OutputEvents = {
 	};
 	badGuess: {
 		nick: string;
-		keyword: string;
+		guess: string;
 	};
 };
 
@@ -82,6 +82,23 @@ export class MockBackend implements EventBackend {
 				setTimeout(() => {
 					this._triggerMessage({type: "exchangePin", payload: "1234"});
 				}, 500);
+				break;
+			}
+			case "guess": {
+				setTimeout(() => {
+					if (Math.random() > 0.5) {
+						this._triggerMessage({type: "badGuess", payload: {
+							nick: "Dirk",
+							guess: message.payload.toString(),
+						}});
+					} else {
+						this._triggerMessage({type: "winner", payload: {
+							nick: "Dirk",
+							keyword: "svaret",
+						}});
+					}
+				}, 500);
+				break;
 			}
 		}
 	}

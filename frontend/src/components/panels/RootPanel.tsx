@@ -107,6 +107,7 @@ export class RootPanel extends React.Component<Props, State> {
 							<InfoPanel
 								type="information"
 								message={message}
+								onConfirm={() => this._triggerEvent("setRoute", "game")}
 							/>
 						);
 						case "showPin": return (
