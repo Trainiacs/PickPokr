@@ -26,7 +26,7 @@ export class Application {
 		this._backend = backend;
 		this._backend.listen("error", (a: any) => console.log(a));
 		this._backend.listen("roaster", this._onRosterEvent.bind(this));
-		this._backend.listen("challange", this._onChallangeEvent.bind(this));
+		this._backend.listen("challenge", this._onChallangeEvent.bind(this));
 		this._backend.listen("exchangePin", this._onExchangePinEvent.bind(this));
 
 		this._lobbyManager = new LobbyManager();
@@ -66,7 +66,7 @@ export class Application {
 		this._render();
 	}
 
-	private _onChallangeEvent(ev: {type: "challange", payload: {answerLength: number, question?: string}[]}) {
+	private _onChallangeEvent(ev: {type: "challenge", payload: {answerLength: number, question?: string}[]}) {
 		let words = GameManager.importWords(ev.payload);
 		this._gameManager.setWords(words);
 		if (this._state === "lobby") {
