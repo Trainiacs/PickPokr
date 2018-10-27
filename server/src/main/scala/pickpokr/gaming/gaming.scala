@@ -232,7 +232,7 @@ object QuestionSet {
   def apply(n: Int): QuestionSet = {
     val words = wordsByLength(n).filterNot(w => w.exists("cijpuwxyz".contains))
     val keyword = words(random.nextInt(words.size))
-    println(s"words = ${words.mkString}, keyword = $keyword")
+    println(s"words = ${words.mkString("[", ", ", "]")}, keyword = $keyword")
     val qs = keyword.toUpperCase.map(questionsByInitialCharacter).map(_.head).map {
       case (answer, query) => Question(query, answer)
     }.toList
