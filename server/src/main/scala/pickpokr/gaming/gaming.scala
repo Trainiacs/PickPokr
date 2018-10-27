@@ -5,52 +5,63 @@ import java.security.SecureRandom
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors._
+import akka.http.scaladsl.model.ws.TextMessage
+import pickpokr.gaming.Client.Challenge
+import pickpokr.gaming.Game.Question
+import pickpokr.gaming.http.JsonSupport
+import spray.json.JsValue
 
 import scala.annotation.tailrec
 
-case class Nick(literal: String) extends AnyVal with Ordered[Nick] {
-  override def compare(that: Nick): Int = literal.compare(that.literal)
-}
+case class Nick(literal: String)
+case class Pin(value: Int)
 
 object Player {
   sealed trait Event
   case class RoasterUpdated(roaster: Train.Roaster) extends Event
   sealed trait Command
   case class UpdateRoaster(roaster: Train.Roaster) extends Command
-  case class JoinGame(index: Int, question: String, answer: String, game: Game) extends Command
+  case class JoinGame(index: Int, question: Question, game: Game) extends Command
   case class Guess(literal: String) extends Command
   case class Winner(nick: Nick) extends Command
-  case class Pin(value:Int) extends Command
+  case class Pin(value: Int) extends Command
+  case class ExchangeCommit(nick: Nick) extends Command
 
-  def waiting(client: Client, nick: Nick): Behavior[Command] = {
-    receiveMessage {
-      case JoinGame(index, question, answer, game) =>
-        client ! Client.Challenge(index, question, answer.length)
+  def waiting(client: WSClient, nick: Nick): Behavior[Command] = {
+    receiveMessagePartial {
+      case JoinGame(index, question, game) =>
+        client ! Client.Challenge(List(Some(question) → answer.length)).toTextMessage
         playing(client, nick, game, answer)
     }
   }
-  def playing(client: Client, nick: Nick, game: Game, answer: String): Behavior[Command] = {
+  def playing(client: WSClient, nick: Nick, game: Game, answer: String, challenges: Array[Challenge]): Behavior[Command] = {
     receiveMessage {
       case UpdateRoaster(roaster) =>
-        client ! Client.UpdateRoaster(roaster.nicks.toList)
+        client ! Client.Roaster(roaster.nicks).toTextMessage
         same
       case guess: Guess if guess.literal == answer =>
         game ! Game.Winner(nick)
         same
-      case Winner(winner) ⇒ client ! Client.Outcome(winner, answer)
+      case Winner(winner) ⇒
+        client ! Client.Outcome(winner, answer).toTextMessage
         same // Todo end game
       case Pin(pin) ⇒
-        client ! Client.Pin(pin)
+        client ! Client.Pin(pin).toTextMessage
+        same
+      case ExchangeCommit(nick) ⇒
         same
     }
   }
 }
 
 object Game {
-  val questions = List(
-    "Är en resenär" -> "Turist",
-    "Blixt och dunder!" -> "Åska",
-    "Finns i Falun" -> "Gruva")
+
+  case class Question(query: String, answer: String)
+
+  val questions = List[Question](
+    Question("Är en resenär", "Turist"),
+    Question("Blixt och dunder", "Åska"),
+    Question("Finns i Falun", "Gruva"))
 
   sealed trait Event
   sealed trait Command
@@ -71,17 +82,40 @@ object Game {
   }
 }
 
+case class ClientMessage(`type`: String, payload: JsValue)
+
 object Client {
-  sealed trait Message
-  case object Enrolled extends Message
+
+  sealed trait Message {
+    private def format(tpe: String): String = s"""{"type":"$tpe"}"""
+    private def format(tpe: String, payload: String): String = s"""{"type":"$tpe", "payload":"$payload"}"""
+    private def format(tpe: String, payload: Int): String = s"""{"type":"$tpe", "payload":$payload}"""
+    def toTextMessage: TextMessage = {
+      val json = this match {
+        case Denied(reason) ⇒ format("denied", reason)
+        case Roaster(nicks) ⇒ s"""{"type": "roaster", "payload":${nicks.map("\"" + _.literal + "\"").mkString("[", ", ", "]")}}"""
+        case Pin(value) ⇒ format("pin", value)
+        case Challenge(qas) ⇒
+          val qal = qas.map {
+            case (Some(q), l) ⇒ s"""{"question": "$q", "answerLength": $l}"""
+            case (None, l) ⇒ s"""{"answerLength": $l}"""
+          }.mkString("[", ", ", "]")
+          s"""{"type":"challenge", "payload":$qal}"""
+        case Outcome(nick, answer) ⇒
+          s"""{"type":"outcome", "payload":{"nick": $nick, "answer": "$answer"}"""
+      }
+      println(s"to client -> $json")
+      TextMessage(json)
+    }
+  }
   case class Denied(reason: String) extends Message
-  case class UpdateRoaster(nicks: List[Nick]) extends Message
+  case class Roaster(nicks: List[Nick]) extends Message
   case class Pin(value: Int) extends Message
-  case class Challenge(index: Int, question: String, answerLength: Int) extends Message
+  case class Challenge(qas: List[(Option[String], Int)]) extends Message
   case class Outcome(nick: Nick, answer: String) extends Message
 }
 
-object Train {
+object Train extends JsonSupport {
   type Id = Long
   case class Pin(value: Int) extends AnyVal
   case class Roaster(nicks: List[Nick] = Nil)
@@ -91,10 +125,11 @@ object Train {
   final case class Denied(reason: String) extends Event
 
   sealed trait Command
-  case class ClientConnected(nick: Nick, client: Client) extends Command
+  case class ClientConnected(nick: Nick, client: WSClient) extends Command
   private case object CheckRoaster extends Command
   case class Guess(nick: Nick, value: String) extends Command
   case class RequestExchange(nick: Nick) extends Command
+  case class ExchangeCommit(nick: Nick, pin: Pin) extends Command
 
   private val random = new SecureRandom()
 
@@ -103,13 +138,13 @@ object Train {
       receiveMessagePartial {
         case ClientConnected(nick, client) =>
           if (players.keySet.contains(nick)) {
-            client ! Client.Denied("Nick already taken")
+            client ! Client.Denied("Nick already taken").toTextMessage
             same
           } else {
             val player = ctx.spawn(Player.waiting(client, nick), s"player-${nick.literal}")
-            client ! Client.Enrolled
             val up = players.updated(nick, player)
             val updatedRoaster = roaster.copy(nicks = nick :: roaster.nicks)
+            client ! Client.Roaster(updatedRoaster.nicks).toTextMessage
             up.values.foreach(_ ! Player.UpdateRoaster(updatedRoaster))
             ctx.self ! CheckRoaster
             behavior(up, updatedRoaster, games)
@@ -131,6 +166,12 @@ object Train {
           val pin = generatePin()
           players(nick) ! Player.Pin(pin)
           behavior(players, roaster, games, exchanges + (pin → nick))
+        case ExchangeCommit(nick, pin) ⇒
+          exchanges.get(pin.value).foreach { otherNick ⇒
+            players(otherNick) ! Player.ExchangeCommit(nick)
+            players(nick) ! Player.ExchangeCommit(otherNick)
+          }
+          same
       }
     }
   }
@@ -141,22 +182,26 @@ object Lobby {
 
   sealed trait Command
   case class Cancel(train: Train.Id, nick: Nick) extends Command
-  case class ClientConnected(train: Train.Id, nick: Nick, client: Client) extends Command
+  case class ClientConnected(train: Train.Id, nick: Nick, client: WSClient) extends Command
   case class Guess(train: Train.Id, nick: Nick, guess: String) extends Command
   case class RequestExchange(trainId: Int, nick: Nick) extends Command
+  case class ExchangeCommit(trainId: Int, nick: Nick, pin: Pin) extends Command
 
-  def behavior(trains: Map[Train.Id, Train] = Map.empty, clients: List[Client] = Nil): Behavior[Command] = {
+  def behavior(trains: Map[Train.Id, Train] = Map.empty, clients: List[WSClient] = Nil): Behavior[Command] = {
     setup { ctx ⇒
       receiveMessagePartial {
         case ClientConnected(trainId, nick, client) =>
           val train = trains.getOrElse(trainId, ctx.spawn(Train.behavior(), s"train-$trainId"))
           train ! Train.ClientConnected(nick, client)
           behavior(trains.updated(trainId, train), client :: clients)
-        case Guess(trainId: Train.Id, nick: Nick, guess: String) ⇒
+        case Guess(trainId, nick, guess) ⇒
           trains(trainId) ! Train.Guess(nick, guess)
           same
         case RequestExchange(trainId, nick) ⇒
           trains(trainId) ! Train.RequestExchange(nick)
+          same
+        case ExchangeCommit(trainId, nick, pin) ⇒
+          trains(trainId) ! Train.ExchangeCommit(nick, pin)
           same
       }
     }
@@ -164,7 +209,7 @@ object Lobby {
 }
 
 object Words {
-  val all =
+  val all: String =
     """Abroad, Access, Accommodations, Activities, Addition, Adventure, Affordable, Agency, Airfare, Allure, Ambiance, Amenities, Amount, Ample, Amusement, Appetite, Aquatic, Arrangements, Array, Assortment, Atmosphere, Attraction, Availability
       |Backyard, Barbecue, Beach, Bellhop, Beverage, Biking, Boathouse, Boating, Boutique, Break, Budget, Business
       |Camper, Campground, Camping, Cancellation, Canoeing, Capacity, Captain, Caravan, Cash, Certification, Challenge, Charter, Chef, Choice, Clientele, Climate, Coach, Comfort, Comfortable, Contract, Convenience, Costly, Crafts, Credit, Cruise
