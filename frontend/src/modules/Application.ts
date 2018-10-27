@@ -9,7 +9,7 @@ import {
 	GamePlayer,
 } from "./";
 
-type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers";
+type ApplicationState = "start" | "signIn" | "waiting" | "lobby" | "game" | "showPin" | "showPlayers" | "info";
 
 export class Application {
 	private _state: ApplicationState;
@@ -81,6 +81,12 @@ export class Application {
 		this._render();
 	}
 
+	private _setInfo(message: string) {
+		this._message = message;
+		this._state = "info";
+		this._render();
+	}
+
 	private _onEvent(event: {type: string, meta: any}) {
 		console.log(event);
 		switch(event.type) {
@@ -94,7 +100,7 @@ export class Application {
 				break;
 			}
 			case "makeGuess": {
-				this._backend.send({type: "guess", payload: event.meta});
+				this._backend.send({type: "guess", payload: event.meta.toLowerCase()});
 				this._setState("game");
 				break;
 			}

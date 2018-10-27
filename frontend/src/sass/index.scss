@@ -486,6 +486,11 @@ button {
 		content: "\f05a";
 	}
 
+	& > .info.info:before {
+		content: "\f05a";
+		font-family: 'Font Awesome 5 Free Solid';
+	}
+
 	& > .info.pin:before {
 		content: "\f2b5";
 		font-size: $theme-click-size * 2;

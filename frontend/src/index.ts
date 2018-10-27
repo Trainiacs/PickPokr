@@ -19,7 +19,7 @@ async function _startApplication(socketHost: string, systemDataPath: string) {
 		console.log("Loading without system id: ");
 	}*/
 
-	let backend = new MockBackend(socketHost + (systemId || "1234"));
+	let backend = new WebSocketBackend(socketHost + (systemId || "1234"));
 	let application = new Application(backend);
 	application.init();
 }
